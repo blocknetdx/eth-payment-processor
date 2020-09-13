@@ -1,0 +1,8 @@
+*.swp
+*.pyc
+venv
+venv/*
+clouddb
+clouddb/*
+*.sh
+.idea/

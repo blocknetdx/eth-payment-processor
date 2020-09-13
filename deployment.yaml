@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: eth-payment-processor
+  namespace: cc-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: eth-payment-processor
+  template:
+    metadata:
+      labels:
+        app: eth-payment-processor
+    spec:
+      automountServiceAccountToken: true
+      imagePullSecrets:
+      - name: pipeline-docker-registry
+      containers:
+      - name: eth-payment-processor
+        image: ${CICD_IMAGE}:${CICD_EXECUTION_SEQUENCE}
+        imagePullPolicy: Always
+        env:
+          - name: ETH_HOST
+            value: "eth-mainnet-service.cc-dev.svc.cluster.local"
+          - name: ETH_PORT
+            value: "8546"
+          - name: DB_HOST
+            value: "eth-postgresql.cc-dev.svc.cluster.local"
+          - name: DB_USERNAME
+            value: ethuser
+          - name: DB_PASSWORD
+            value: BaAUYWsfnSn47vaf4cBuFxrZJ6QHGTLf
+          - name: DB_DATABASE
+            value: ethereum
+        ports:
+        - containerPort: 8080
+        resources:
+          limits:
+            cpu: "1"
+            memory: "1024m"
+          requests:
+            cpu: "500m"
+            memory: "100m"
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: eth-payment-processor
+  namespace: cc-dev
+  labels:
+    app: eth-payment-processor
+spec:
+  ports:
+  - protocol: TCP
+    port: 8080
+    targetPort: 8080
+  selector:
+    app: eth-payment-processor
