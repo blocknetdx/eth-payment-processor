@@ -1,5 +1,7 @@
 import json
 import asyncio
+import uuid
+import datetime
 from aiohttp import web
 from database.models import *
 from util.eth_payments import Web3Helper
@@ -10,20 +12,58 @@ web3_helper = Web3Helper()
 
 
 @db_session
-@routes.get("/request_eth_address", name='request_eth_address')
-async def request_eth_address(request: web.Request):
+@routes.get("/create_project", name='create_project')
+async def create_project(request: web.Request):
+    print('Creating new pending project')
+
     eth_address = await web3_helper.get_eth_address()
+    project_name = str(uuid.uuid4())
+    start_time = datetime.datetime.now()
+    payment_expires = start_time + datetime.timedelta(hours=3, minutes=30)
 
     error = 0
-    if eth_address is None:
-        error = 'Unexpected Error!'
+    try:
+        if eth_address is None:
+            raise Exception
+
+        project = Project(
+            name=project_name,
+            api_token_count=10000,
+            active=False
+        )
+
+        payment = Payment(
+            pending=True,
+            address=eth_address,
+            start_time=start_time,
+            project=project
+        )
+
+        commit()
+    except Exception as e:
+        print(e)
+        error = -9091
+
+    if eth_address is None or error != 0:
+        error = -1000
+
+        context = {
+            'result': error,
+            'error': error
+        }
+
+        return web.json_response(json.dumps(context))
 
     context = {
-        'result': eth_address if error is None else '',
+        'result': {
+            'project_id': project_name,
+            'payment_address': eth_address,
+            'expiry_time': payment_expires.strftime("%Y-%m-%d %H:%M:%S")
+        },
         'error': error
     }
 
-    print('Received ping request')
+    print('Successfully created new pending project')
 
     return web.json_response(json.dumps(context))
 

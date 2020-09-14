@@ -1,26 +1,26 @@
 from datetime import datetime
-
 from pony.orm import *
 from database.db import db
 
 
 class Project(db.Entity):
     name = PrimaryKey(str)
-    paymenthash = Required(str)
-    allocatedapicalls = Required(int)
-    usedapicalls = Required(int)
 
-    expires = Required(datetime)
+    api_token_count = Required(int)
+    used_api_tokens = Optional(int)
+
+    expires = Optional(datetime)
     payments = Set(lambda: Payment, reverse='pending')
 
-    active = Required(bool)
+    active = Required(bool, sql_default=False)
 
 
 class Payment(db.Entity):
     pending = Required(bool)
     address = Required(str)
-    amount = Optional(float)
 
+    tx_hash = Optional(str)
+    amount = Optional(float)
     start_time = Required(datetime)
 
     project = Required(Project)
