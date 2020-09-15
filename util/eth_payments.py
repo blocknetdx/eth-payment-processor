@@ -7,7 +7,7 @@ from database.models import commit, db_session, select, Payment
 
 class Web3Helper:
     def __init__(self):
-        self.ETH_HOST = os.environ.get('ETH_HOST', 'eth-mainnet-service.cc-dev.svc.cluster.local')
+        self.ETH_HOST = os.environ.get('ETH_HOST', 'localhost')
         self.ETH_PORT = os.environ.get('ETH_PORT', 8546)
         self.w3 = Web3(Web3.WebsocketProvider('ws://{}:{}'.format(self.ETH_HOST, self.ETH_PORT)))
         self.w3_accounts = Web3(Web3.WebsocketProvider('ws://{}:{}'.format(self.ETH_HOST, self.ETH_PORT)))
