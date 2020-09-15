@@ -60,8 +60,3 @@ spec:
     targetPort: 8080
   selector:
     app: eth-payment-processor
-
-export DB_HOST="eth-postgresql.cc-dev.svc.cluster.local"
-export DB_USERNAME=ethuser
-export DB_PASSWORD=BaAUYWsfnSn47vaf4cBuFxrZJ6QHGTLf
-export DB_DATABASE=ethereum

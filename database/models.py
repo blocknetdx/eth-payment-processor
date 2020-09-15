@@ -6,8 +6,9 @@ from database.db import db
 class Project(db.Entity):
     name = PrimaryKey(str)
 
+    api_key = Required(str)
     api_token_count = Required(int)
-    used_api_tokens = Optional(int)
+    used_api_tokens = Optional(int, sql_default=0)
 
     expires = Optional(datetime)
     payments = Set(lambda: Payment, reverse='project')

@@ -1,9 +1,10 @@
 import os
 import uuid
+import secrets
 import datetime
 from threading import Thread
 from aiohttp import web
-from database.models import commit, db_session, Project, Payment
+from database.models import commit, db_session, select, Project, Payment
 from util.eth_payments import Web3Helper
 
 routes = web.RouteTableDef()
@@ -22,6 +23,7 @@ async def create_project(request: web.Request):
     project_name = str(uuid.uuid4())
     start_time = datetime.datetime.now()
     payment_expires = start_time + datetime.timedelta(hours=3, minutes=30)
+    api_key = secrets.token_urlsafe(32)
 
     error = 0
     try:
@@ -31,7 +33,9 @@ async def create_project(request: web.Request):
         with db_session:
             project = Project(
                 name=project_name,
+                api_key=api_key,
                 api_token_count=10000,
+                used_api_tokens=0,
                 active=False
             )
 
@@ -60,14 +64,40 @@ async def create_project(request: web.Request):
     context = {
         'result': {
             'project_id': project_name,
+            'api_key': api_key,
             'payment_address': eth_address,
             'payment_amount': min_payment_amount,
-            'expiry_time': payment_expires.strftime("%Y-%m-%d %H:%M:%S")
+            'expiry_time': payment_expires.strftime("%Y-%m-%d %H:%M:%S EST")
         },
         'error': error
     }
 
     print('Successfully created new pending project')
+
+    return web.json_response(context)
+
+
+@routes.get("/list_projects", name='list_projects')
+async def list_projects(request: web.Request):
+    results = []
+    try:
+        with db_session:
+            query = select(p for p in Project)
+
+            results = [{
+                'name': p.name,
+                'api_token_count': p.api_token_count,
+                'used_api_tokens': p.used_api_tokens,
+                'expires': str(p.expires),
+                'active': p.active,
+            } for p in query]
+    except Exception as e:
+        print(e)
+
+    context = {
+        'result': results,
+        'error': 0
+    }
 
     return web.json_response(context)
 

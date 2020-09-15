@@ -12,7 +12,7 @@ class Web3Helper:
         self.w3 = Web3(Web3.WebsocketProvider('ws://{}:{}'.format(self.ETH_HOST, self.ETH_PORT)))
         self.w3_accounts = Web3(Web3.WebsocketProvider('ws://{}:{}'.format(self.ETH_HOST, self.ETH_PORT)))
 
-        self.min_payment_amount = os.environ.get('PAYMENT_AMOUNT', 0.01)
+        self.min_payment_amount = self.w3.toWei(os.environ.get('PAYMENT_AMOUNT', 0.01), 'ether')
 
         self.accounts = []
 
