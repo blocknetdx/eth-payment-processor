@@ -6,3 +6,5 @@ clouddb
 clouddb/*
 *.sh
 .idea/
+
+telepresence.log

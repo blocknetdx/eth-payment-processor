@@ -28,7 +28,7 @@ spec:
       storage: 10Gi
 ---
 
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: eth-postgresql
@@ -36,6 +36,11 @@ metadata:
   labels:
     app: postgresql
 spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgresql
+      tier: postgreSQL
   strategy:
     type: Recreate
   template:
@@ -45,9 +50,11 @@ spec:
         tier: postgreSQL
     spec:
       containers:
-        - image: postgres:9.6.2-alpine
+        - image: postgres:12.4
           name: postgresql
           env:
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
             - name: POSTGRES_USER
               value: ethuser
             - name: POSTGRES_DB

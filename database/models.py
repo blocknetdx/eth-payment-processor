@@ -10,7 +10,7 @@ class Project(db.Entity):
     used_api_tokens = Optional(int)
 
     expires = Optional(datetime)
-    payments = Set(lambda: Payment, reverse='pending')
+    payments = Set(lambda: Payment, reverse='project')
 
     active = Required(bool, sql_default=False)
 
@@ -23,7 +23,7 @@ class Payment(db.Entity):
     amount = Optional(float)
     start_time = Required(datetime)
 
-    project = Required(Project)
+    project = Required(Project, reverse='payments')
 
 
 db.generate_mapping(create_tables=True)

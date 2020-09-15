@@ -1,9 +1,9 @@
-import json
-import asyncio
+import os
 import uuid
 import datetime
+from threading import Thread
 from aiohttp import web
-from database.models import *
+from database.models import commit, db_session, Project, Payment
 from util.eth_payments import Web3Helper
 
 routes = web.RouteTableDef()
@@ -11,7 +11,9 @@ app = web.Application()
 web3_helper = Web3Helper()
 
 
-@db_session
+min_payment_amount = os.environ.get('PAYMENT_AMOUNT', 0.01)
+
+
 @routes.get("/create_project", name='create_project')
 async def create_project(request: web.Request):
     print('Creating new pending project')
@@ -26,20 +28,21 @@ async def create_project(request: web.Request):
         if eth_address is None:
             raise Exception
 
-        project = Project(
-            name=project_name,
-            api_token_count=10000,
-            active=False
-        )
+        with db_session:
+            project = Project(
+                name=project_name,
+                api_token_count=10000,
+                active=False
+            )
 
-        payment = Payment(
-            pending=True,
-            address=eth_address,
-            start_time=start_time,
-            project=project
-        )
+            payment = Payment(
+                pending=True,
+                address=eth_address,
+                start_time=start_time,
+                project=project
+            )
 
-        commit()
+            commit()
     except Exception as e:
         print(e)
         error = -9091
@@ -52,12 +55,13 @@ async def create_project(request: web.Request):
             'error': error
         }
 
-        return web.json_response(json.dumps(context))
+        return web.json_response(context)
 
     context = {
         'result': {
             'project_id': project_name,
             'payment_address': eth_address,
+            'payment_amount': min_payment_amount,
             'expiry_time': payment_expires.strftime("%Y-%m-%d %H:%M:%S")
         },
         'error': error
@@ -65,12 +69,14 @@ async def create_project(request: web.Request):
 
     print('Successfully created new pending project')
 
-    return web.json_response(json.dumps(context))
+    return web.json_response(context)
 
 
-async def start_backend(application):
-    application['eth_payment_listener'] = asyncio.create_task(web3_helper.start())
-    application['eth_accounts_update'] = asyncio.create_task(web3_helper.loop_accounts())
+async def on_startup(application):
+    t1 = Thread(target=web3_helper.start)
+    t2 = Thread(target=web3_helper.loop_accounts)
+    t1.start()
+    t2.start()
 
 
 async def init_app() -> web.Application:
@@ -82,7 +88,7 @@ async def init_app() -> web.Application:
 def main():
     print("[server] Starting server on port 8080.")
 
-    app.on_startup.append(start_backend)
+    app.on_startup.append(on_startup)
     web.run_app(init_app())
 
 
