@@ -12,8 +12,6 @@ class Web3Helper:
         self.w3 = Web3(Web3.WebsocketProvider('ws://{}:{}'.format(self.ETH_HOST, self.ETH_PORT)))
         self.w3_accounts = Web3(Web3.WebsocketProvider('ws://{}:{}'.format(self.ETH_HOST, self.ETH_PORT)))
 
-        self.min_payment_amount = self.w3.toWei(os.environ.get('PAYMENT_AMOUNT', 0.01), 'ether')
-
         self.accounts = []
 
     @db_session
@@ -59,10 +57,13 @@ class Web3Helper:
 
                 payment_obj = Payment.get(address=to_address)
 
-                if value < self.min_payment_amount:
+                if value < payment_obj.tier1_expected_amount or value < payment_obj.tier2_expected_amount:
                     payment_obj.project.active = False
                 else:
                     payment_obj.project.active = True
+
+                if value >= payment_obj.tier2_expected_amount:
+                    payment_obj.project.archive_mode = True
 
                 payment_obj.pending = False
                 payment_obj.amount = value

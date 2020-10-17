@@ -1,7 +1,9 @@
 import os
+import time
 import uuid
 import secrets
 import datetime
+import ccxt
 from threading import Thread
 from aiohttp import web
 from database.models import commit, db_session, select, Project, Payment
@@ -12,7 +14,26 @@ app = web.Application()
 web3_helper = Web3Helper()
 
 
-min_payment_amount = os.environ.get('PAYMENT_AMOUNT', 0.01)
+min_payment_amount_tier1 = float(os.environ.get('PAYMENT_AMOUNT_TIER1', 35))
+min_payment_amount_tier2 = float(os.environ.get('PAYMENT_AMOUNT_TIER2', 200))
+
+coinbase = ccxt.coinbasepro()
+last_amount_update_time = None
+eth_price = None
+
+
+def get_eth_amount(amount):
+    global eth_price
+    global last_amount_update_time
+
+    if last_amount_update_time is None or (int(time.time()) - 60) > last_amount_update_time:
+        eth_price = coinbase.fetch_ticker('ETH/USD')['close']
+        last_amount_update_time = int(time.time())
+
+    if eth_price is None:
+        return None
+
+    return float('{:.6f}'.format(amount / eth_price))
 
 
 @routes.get("/create_project", name='create_project')
@@ -24,8 +45,12 @@ async def create_project(request: web.Request):
     start_time = datetime.datetime.now()
     payment_expires = start_time + datetime.timedelta(hours=3, minutes=30)
     api_key = secrets.token_urlsafe(32)
+    tier1_expected_amount = get_eth_amount(min_payment_amount_tier1),
+    tier2_expected_amount = get_eth_amount(min_payment_amount_tier2),
 
-    error = 0
+    print(tier1_expected_amount[0], tier2_expected_amount[0])
+
+    error = 0 if tier1_expected_amount is not None and tier2_expected_amount is not None else -1099
     try:
         if eth_address is None:
             raise Exception
@@ -34,7 +59,7 @@ async def create_project(request: web.Request):
             project = Project(
                 name=project_name,
                 api_key=api_key,
-                api_token_count=10000,
+                api_token_count=6000000,
                 used_api_tokens=0,
                 active=False
             )
@@ -43,7 +68,9 @@ async def create_project(request: web.Request):
                 pending=True,
                 address=eth_address,
                 start_time=start_time,
-                project=project
+                project=project,
+                tier1_expected_amount=tier1_expected_amount[0],
+                tier2_expected_amount=tier2_expected_amount[0],
             )
 
             commit()
@@ -66,7 +93,8 @@ async def create_project(request: web.Request):
             'project_id': project_name,
             'api_key': api_key,
             'payment_address': eth_address,
-            'payment_amount': min_payment_amount,
+            'payment_amount_tier1': tier1_expected_amount[0],
+            'payment_amount_tier2': tier2_expected_amount[0],
             'expiry_time': payment_expires.strftime("%Y-%m-%d %H:%M:%S EST")
         },
         'error': error
