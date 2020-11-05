@@ -107,8 +107,8 @@ async def list_projects(request: web.Request):
 
 
 async def on_startup(application):
-    t1 = Thread(target=web3_helper.start)
-    t2 = Thread(target=web3_helper.loop_accounts)
+    t1 = Thread(target=web3_helper.start, daemon=True)
+    t2 = Thread(target=web3_helper.loop_accounts, daemon=True)
     t1.start()
     t2.start()
 
