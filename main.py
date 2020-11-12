@@ -1,39 +1,15 @@
-import os
-import time
 import uuid
 import secrets
 import datetime
-import ccxt
 from threading import Thread
 from aiohttp import web
 from database.models import commit, db_session, select, Project, Payment
 from util.eth_payments import Web3Helper
+from util import get_eth_amount, min_payment_amount_tier1, min_payment_amount_tier2
 
 routes = web.RouteTableDef()
 app = web.Application()
 web3_helper = Web3Helper()
-
-
-min_payment_amount_tier1 = float(os.environ.get('PAYMENT_AMOUNT_TIER1', 35))
-min_payment_amount_tier2 = float(os.environ.get('PAYMENT_AMOUNT_TIER2', 200))
-
-coinbase = ccxt.coinbasepro()
-last_amount_update_time = None
-eth_price = None
-
-
-def get_eth_amount(amount):
-    global eth_price
-    global last_amount_update_time
-
-    if last_amount_update_time is None or (int(time.time()) - 60) > last_amount_update_time:
-        eth_price = coinbase.fetch_ticker('ETH/USD')['close']
-        last_amount_update_time = int(time.time())
-
-    if eth_price is None:
-        return None
-
-    return float('{:.6f}'.format(amount / eth_price))
 
 
 @routes.get("/create_project", name='create_project')
@@ -131,8 +107,8 @@ async def list_projects(request: web.Request):
 
 
 async def on_startup(application):
-    t1 = Thread(target=web3_helper.start)
-    t2 = Thread(target=web3_helper.loop_accounts)
+    t1 = Thread(target=web3_helper.start, daemon=True)
+    t2 = Thread(target=web3_helper.loop_accounts, daemon=True)
     t1.start()
     t2.start()
 
