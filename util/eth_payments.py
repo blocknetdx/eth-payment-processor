@@ -64,6 +64,7 @@ class Web3Helper:
 
     def handle_event(self, event):
         block_hash = event.hex()
+        print('processing eth block {}'.format(block_hash))
         block = self.w3.eth.getBlock(block_hash, full_transactions=True)
         transactions = block['transactions']
 
