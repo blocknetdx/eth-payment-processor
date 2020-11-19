@@ -14,6 +14,14 @@ web3_helper = Web3Helper()
 
 @routes.get("/create_project", name='create_project')
 async def create_project(request: web.Request):
+    """Creates Hydra Project"
+
+    Request Hydra Project, this creates project-id in db and gets ETH address for payment.
+    Example: curl http://127.0.0.1/xrs/eth_passthrough     -X POST     -H "Content-Type: application/json"     -d '{"jsonrpc":"2.0","method":"request_project","params": [],"id":1}'
+    results: "error":0,"result":{"api_key":"uiF_scQgopWWhgDFT7AMbM2Vf2b66xlfnVrJe6e1gUE","expiry_time":"2020-11-19 22:17:53 EST","payment_address":"0x0x0xxx","payment_amount_tier1":0.073597,"payment_amount_tier2":0.420557,"project_id":"85f1641d-f8ab-4acb-aa00-5d19601a9dd7"}}
+    :param request: none
+    :return: project-id, eth-payment address
+    """
     print('Creating new pending project')
 
     eth_address = await web3_helper.get_eth_address()
@@ -83,6 +91,11 @@ async def create_project(request: web.Request):
 
 @routes.get("/list_projects", name='list_projects')
 async def list_projects(request: web.Request):
+    """list hydra projects
+
+    :param request: none
+    :return: list of projects
+    """
     results = []
     try:
         with db_session:
