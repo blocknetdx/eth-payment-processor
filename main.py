@@ -1,3 +1,6 @@
+import logging
+import os
+import sys
 import uuid
 import secrets
 import datetime
@@ -7,6 +10,11 @@ from database.models import commit, db_session, select, Project, Payment
 from util.eth_payments import Web3Helper
 from util import get_eth_amount, min_payment_amount_tier1, min_payment_amount_tier2
 
+LOGLEVEL = os.environ.get('LOGLEVEL', 'INFO').upper()
+logging.basicConfig(level=LOGLEVEL, stream=sys.stdout,
+                    format='%(asctime)s %(levelname)s - %(message)s',
+                    datefmt='[%Y-%m-%d:%H:%M:%S]')
+
 routes = web.RouteTableDef()
 app = web.Application()
 web3_helper = Web3Helper()
@@ -14,7 +22,7 @@ web3_helper = Web3Helper()
 
 @routes.get("/create_project", name='create_project')
 async def create_project(request: web.Request):
-    print('Creating new pending project')
+    logging.info('Creating new pending project')
 
     eth_address = await web3_helper.get_eth_address()
     project_name = str(uuid.uuid4())
@@ -24,7 +32,7 @@ async def create_project(request: web.Request):
     tier1_expected_amount = get_eth_amount(min_payment_amount_tier1),
     tier2_expected_amount = get_eth_amount(min_payment_amount_tier2),
 
-    print(tier1_expected_amount[0], tier2_expected_amount[0])
+    logging.info(tier1_expected_amount[0], tier2_expected_amount[0])
 
     error = 0 if tier1_expected_amount is not None and tier2_expected_amount is not None else -1099
     try:
@@ -51,7 +59,7 @@ async def create_project(request: web.Request):
 
             commit()
     except Exception as e:
-        print(e)
+        logging.error(e)
         error = -9091
 
     if eth_address is None or error != 0:
@@ -76,7 +84,7 @@ async def create_project(request: web.Request):
         'error': error
     }
 
-    print('Successfully created new pending project')
+    logging.info('Successfully created new pending project')
 
     return web.json_response(context)
 
@@ -96,7 +104,7 @@ async def list_projects(request: web.Request):
                 'active': p.active,
             } for p in query]
     except Exception as e:
-        print(e)
+        logging.error(e)
 
     context = {
         'result': results,
@@ -108,9 +116,7 @@ async def list_projects(request: web.Request):
 
 async def on_startup(application):
     t1 = Thread(target=web3_helper.start, daemon=True)
-    t2 = Thread(target=web3_helper.loop_accounts, daemon=True)
     t1.start()
-    t2.start()
 
 
 async def init_app() -> web.Application:
@@ -120,7 +126,7 @@ async def init_app() -> web.Application:
 
 
 def main():
-    print("[server] Starting server on port 8080.")
+    logging.info("[server] Starting server on port 8080.")
 
     app.on_startup.append(on_startup)
     web.run_app(init_app())
