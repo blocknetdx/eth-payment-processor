@@ -9,9 +9,10 @@ RUN apt-get update && \
     && rm -rf /usr/share/man \
     && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
+COPY requirements.txt /app/manager/requirements.txt
+RUN pip3 install -r /app/manager/requirements.txt
+
 COPY . /app/manager/
 WORKDIR /app/manager
-
-RUN pip3 install -r /app/manager/requirements.txt
 
 CMD ["python3", "/app/manager/main.py"]
