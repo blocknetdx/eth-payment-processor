@@ -95,6 +95,10 @@ class Web3Helper:
                     logging.warning('payment received for unknown project'.format(tx_hash, to_address, value))
                     continue
 
+                tx_ids = set(payment_obj.tx_hash.split(','))
+                if tx_hash in tx_ids:
+                    continue  # payment already received
+
                 logging.info('payment received for project: {} {} {}'.format(payment_obj.project.name, tx_hash,
                                                                              to_address, value))
 
