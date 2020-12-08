@@ -23,16 +23,22 @@ web3_helper = Web3Helper()
 @routes.get("/create_project", name='create_project')
 async def create_project(request: web.Request):
     logging.info('Creating new pending project')
+    # fetch eth
+    tier1_expected_amount = get_eth_amount(min_payment_amount_tier1)
+    tier2_expected_amount = get_eth_amount(min_payment_amount_tier2)
+    if not tier1_expected_amount or not tier2_expected_amount:
+        return web.json_response({
+            'error': 'Internal Server Error: Failed to get coinbase ETH prices, please try again'
+        })
 
     eth_address = await web3_helper.get_eth_address()
     project_name = str(uuid.uuid4())
     start_time = datetime.datetime.now()
     payment_expires = start_time + datetime.timedelta(hours=3, minutes=30)
     api_key = secrets.token_urlsafe(32)
-    tier1_expected_amount = get_eth_amount(min_payment_amount_tier1),
-    tier2_expected_amount = get_eth_amount(min_payment_amount_tier2),
 
-    logging.info(tier1_expected_amount[0], tier2_expected_amount[0])
+    logging.info(f'Creating project {project_name} with payment amounts: tier1 {tier1_expected_amount} '
+                 f'tier2 {tier1_expected_amount}')
 
     error = 0 if tier1_expected_amount is not None and tier2_expected_amount is not None else -1099
     try:
@@ -53,8 +59,8 @@ async def create_project(request: web.Request):
                 address=eth_address,
                 start_time=start_time,
                 project=project,
-                tier1_expected_amount=tier1_expected_amount[0],
-                tier2_expected_amount=tier2_expected_amount[0],
+                tier1_expected_amount=tier1_expected_amount,
+                tier2_expected_amount=tier2_expected_amount,
             )
 
             commit()
@@ -77,8 +83,8 @@ async def create_project(request: web.Request):
             'project_id': project_name,
             'api_key': api_key,
             'payment_address': eth_address,
-            'payment_amount_tier1': tier1_expected_amount[0],
-            'payment_amount_tier2': tier2_expected_amount[0],
+            'payment_amount_tier1': tier1_expected_amount,
+            'payment_amount_tier2': tier2_expected_amount,
             'expiry_time': payment_expires.strftime("%Y-%m-%d %H:%M:%S EST")
         },
         'error': error

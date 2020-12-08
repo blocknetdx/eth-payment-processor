@@ -1,3 +1,4 @@
+import logging
 import os
 import time
 
@@ -15,9 +16,13 @@ def get_eth_amount(amount):
     global eth_price
     global last_amount_update_time
 
-    if last_amount_update_time is None or (int(time.time()) - 60) > last_amount_update_time:
-        eth_price = coinbase.fetch_ticker('ETH/USD')['close']
-        last_amount_update_time = int(time.time())
+    try:
+        if last_amount_update_time is None or (int(time.time()) - 60) > last_amount_update_time:
+            eth_price = coinbase.fetch_ticker('ETH/USD')['close']
+            last_amount_update_time = int(time.time())
+    except Exception as e:
+        logging.info('coinbase eth price lookup failed with error: {}'.format(e))
+        return None
 
     if eth_price is None:
         return None
