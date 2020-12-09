@@ -1,6 +1,7 @@
 import logging
 import os
 import sys
+import time
 import uuid
 import secrets
 import datetime
@@ -18,6 +19,7 @@ logging.basicConfig(level=LOGLEVEL, stream=sys.stdout,
 routes = web.RouteTableDef()
 app = web.Application()
 web3_helper = Web3Helper()
+api_count_cache = dict()
 
 
 @routes.get("/create_project", name='create_project')
@@ -120,15 +122,62 @@ async def list_projects(request: web.Request):
     return web.json_response(context)
 
 
+@routes.post("/{project_id}/api_count", name='api_count')
+async def api_count_handler(request: web.Request):
+    global api_count_cache
+    project_id = request.match_info['project_id']
+    if project_id:
+        if project_id in api_count_cache:
+            api_count_cache[project_id] += 1
+        else:
+            api_count_cache[project_id] = 1
+        context = {
+            'result': 'updated count {}'.format(api_count_cache[project_id]),
+            'error': 0
+        }
+    else:
+        context = {
+            'msg': 'no project found with id {}'.format(project_id),
+            'error': -1001
+        }
+    return web.json_response(context)
+
+
 async def on_startup(application):
     t1 = Thread(target=web3_helper.start, daemon=True)
     t1.start()
+    t2 = Thread(target=update_api_counts, daemon=True)
+    t2.start()
 
 
 async def init_app() -> web.Application:
     app.add_routes(routes)
-
     return app
+
+
+def update_api_counts():
+    """Periodically updates the api counts to the db. Should be called
+    from a unique thread."""
+    while True:
+        global api_count_cache
+        if api_count_cache:
+            try:
+                with db_session:
+                    for project_id in api_count_cache:
+                        proj = Project.get(name=project_id)
+                        if not proj:
+                            continue
+                        count = api_count_cache[project_id]
+                        if not count or not isinstance(count, int):
+                            count = 0
+                        proj.used_api_tokens += count
+                        if proj.used_api_tokens >= proj.api_token_count:
+                            proj.active = False
+                        logging.info('updating {} with {}'.format(proj.name, count))
+                api_count_cache = dict()  # clear cache on success
+            except Exception as e:
+                logging.error(e)
+        time.sleep(5)
 
 
 def main():
