@@ -136,14 +136,23 @@ class Web3Helper:
                     payment_obj.project.api_token_count += calc_api_calls(value, payment_obj.project.archive_mode,
                                                                           default_api_calls_count)
 
-                payment_obj.project.active = True
                 payment_obj.pending = False
+
+                # If the user has overage don't allow them to use the api until they've
+                # paid for the overage. Only set the project to active if they have
+                # more api tokens available than used api tokens.
+                if payment_obj.project.api_token_count > payment_obj.project.used_api_tokens \
+                        or (payment_obj.project.api_token_count > 0 and payment_obj.project.used_api_tokens is None):
+                    payment_obj.project.active = True
+
                 if not payment_obj.amount:
                     payment_obj.amount = float(Web3.fromWei(value, 'ether'))
                 else:
                     payment_obj.amount += float(Web3.fromWei(value, 'ether'))
+
                 if not payment_obj.tx_hash:
                     payment_obj.tx_hash = tx_hash
                 else:
                     payment_obj.tx_hash += ',' + tx_hash
+
                 payment_obj.project.expires = datetime.datetime.now() + datetime.timedelta(days=30)
