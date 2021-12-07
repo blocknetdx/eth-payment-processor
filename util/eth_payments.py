@@ -34,8 +34,8 @@ def calc_api_calls(payment_amount_wei, token, archival_mode: bool, def_api_calls
         return calc_api_calls_tiers(payment_amount_wei, tier1_amount, tier2_amount, archival_mode,
                                     def_api_calls_count)
     elif token == 'ablock':
-        tier1_amount = get_ablock_amount(min_payment_amount_tier1)
-        tier2_amount = get_ablock_amount(min_payment_amount_tier2)
+        tier1_amount = get_ablock_amount(min_payment_amount_tier1 * discount)
+        tier2_amount = get_ablock_amount(min_payment_amount_tier2 * discount)
         return calc_api_calls_tiers(payment_amount_wei, tier1_amount, tier2_amount, archival_mode,
                                     def_api_calls_count)
 
