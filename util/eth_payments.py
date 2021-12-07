@@ -1,14 +1,19 @@
 import logging
 import os
 import time
+import json
 import datetime
 
 from web3 import Web3
 from database.models import Payment, db_session
-from util import get_eth_amount, min_payment_amount_tier1, min_payment_amount_tier2
+from util import get_eth_amount, get_ablock_amount, min_payment_amount_tier1, min_payment_amount_tier2, discount
 
 default_api_calls_count = 6000000
 
+ablock_contract_address = Web3.toChecksumAddress('0xe692c8d72bd4ac7764090d54842a305546dd1de5')
+
+with open("util/ablock_abi.json", 'r') as file:
+    abi = json.load(file)
 
 def calc_api_calls_tiers(payment_amount_wei, tier1_eth_amount, tier2_eth_amount,
                          archival_mode: bool, def_api_calls_count: int) -> int:
@@ -21,12 +26,18 @@ def calc_api_calls_tiers(payment_amount_wei, tier1_eth_amount, tier2_eth_amount,
     return api_calls
 
 
-def calc_api_calls(payment_amount_wei, archival_mode: bool, def_api_calls_count: int) -> int:
+def calc_api_calls(payment_amount_wei, token, archival_mode: bool, def_api_calls_count: int) -> int:
     """Calculates the number of api calls dynamically based on ETH/USD price."""
-    tier1_eth_amount = get_eth_amount(min_payment_amount_tier1)
-    tier2_eth_amount = get_eth_amount(min_payment_amount_tier2)
-    return calc_api_calls_tiers(payment_amount_wei, tier1_eth_amount, tier2_eth_amount, archival_mode,
-                                def_api_calls_count)
+    if token == 'eth':
+        tier1_amount = get_eth_amount(min_payment_amount_tier1)
+        tier2_amount = get_eth_amount(min_payment_amount_tier2)
+        return calc_api_calls_tiers(payment_amount_wei, tier1_amount, tier2_amount, archival_mode,
+                                    def_api_calls_count)
+    elif token == 'ablock':
+        tier1_amount = get_ablock_amount(min_payment_amount_tier1)
+        tier2_amount = get_ablock_amount(min_payment_amount_tier2)
+        return calc_api_calls_tiers(payment_amount_wei, tier1_amount, tier2_amount, archival_mode,
+                                    def_api_calls_count)
 
 
 class Web3Helper:
@@ -35,12 +46,11 @@ class Web3Helper:
         self.ETH_PORT = os.environ.get('ETH_PORT', 8546)
         self.w3 = Web3(Web3.WebsocketProvider('ws://{}:{}'.format(self.ETH_HOST, self.ETH_PORT)))
         self.w3_accounts = Web3(Web3.WebsocketProvider('ws://{}:{}'.format(self.ETH_HOST, self.ETH_PORT)))
-
+        self.contract = self.w3.eth.contract(address=ablock_contract_address, abi=abi)
         self.accounts = []
 
     def start(self):
         latest = self.w3.eth.filter('latest')
-
         while True:
             try:
                 events = latest.get_new_entries()
@@ -71,6 +81,16 @@ class Web3Helper:
         for event in events:
             self.handle_event(event)
 
+    def check_ablock_balance(self):
+        paid = {}
+        for contract_address in self.accounts:
+            balance_contract = self.contract.functions.balanceOf(contract_address).call()
+            payment_obj = Payment.get(address=contract_address)
+            amount_ablock = balance_contract - Web3.toWei(payment_obj.amount_ablock, 'ether')
+            if amount_ablock > 0:
+                paid[contract_address] = amount_ablock
+        return paid
+
     def handle_event(self, event):
         block_hash = Web3.toHex(event)
         if not block_hash:
@@ -81,6 +101,8 @@ class Web3Helper:
             return
         logging.info('processing eth block {}'.format(block_hash))
         transactions = block['transactions']
+
+        ablock_accounts = self.check_ablock_balance()
 
         for tx in transactions:
             tx_hash = tx['hash'].hex()
@@ -104,7 +126,7 @@ class Web3Helper:
 
                 # Supporting partial payments and handling expired payments:
                 # If initial price for default 6M calls is not expired use that to calculate number of calls
-                # from partial payments. If the initial price has expired, use the current price of eth to
+                # from partial payments. If the initial price has expired, u    se the current price of eth to
                 # determine how many calls the user receives. First time partial payments default to non-archival
                 # api access. In order for users to obtain archival access their first payment must be greater
                 # than or equal to the minimum payment amount for archival access.
@@ -120,7 +142,8 @@ class Web3Helper:
                         tier2_expected_amount = get_eth_amount(min_payment_amount_tier2)
                         payment_obj.project.archive_mode = value >= Web3.toWei(tier2_expected_amount, 'ether')
                         # Note set the api calls here since first time payment (do not append)
-                        payment_obj.project.api_token_count = calc_api_calls(value, payment_obj.project.archive_mode,
+                        payment_obj.project.api_token_count = calc_api_calls(value, 'eth',
+                                                                             payment_obj.project.archive_mode,
                                                                              default_api_calls_count)
                     else:
                         # Non-expired payment calcs should use the db payment tiers
@@ -133,7 +156,8 @@ class Web3Helper:
                                                                                    default_api_calls_count)
                 else:
                     # Append api calls because this is a top-up payment (first payment already received)
-                    payment_obj.project.api_token_count += calc_api_calls(value, payment_obj.project.archive_mode,
+                    payment_obj.project.api_token_count += calc_api_calls(value, 'eth',
+                                                                          payment_obj.project.archive_mode,
                                                                           default_api_calls_count)
 
                 payment_obj.pending = False
@@ -154,5 +178,42 @@ class Web3Helper:
                     payment_obj.tx_hash = tx_hash
                 else:
                     payment_obj.tx_hash += ',' + tx_hash
+
+                payment_obj.project.expires = datetime.datetime.now() + datetime.timedelta(days=30)
+
+        if ablock_accounts:
+            for to_address in ablock_accounts:
+                payment_obj = Payment.get(address=to_address)
+                value = ablock_accounts[to_address]
+                if payment_obj.pending:
+                    if datetime.datetime.now() >= payment_obj.start_time + datetime.timedelta(hours=3, minutes=30):
+                        tier2_expected_amount_ablock = get_ablock_amount(min_payment_amount_tier2 * discount)
+                        payment_obj.project.archive_mode = value >= Web3.toWei(tier2_expected_amount_ablock, 'ether')
+                        payment_obj.project.api_token_count = calc_api_calls(value, 'ablock',
+                                                                             payment_obj.project.archive_mode,
+                                                                             default_api_calls_count)
+                    else:
+                        payment_obj.project.archive_mode = value >= Web3.toWei(payment_obj.tier2_expected_amount_ablock,
+                                                                               'ether')
+                        payment_obj.project.api_token_count = calc_api_calls_tiers(value,
+                                                                                   payment_obj.tier1_expected_amount_ablock,
+                                                                                   payment_obj.tier2_expected_amount_ablock,
+                                                                                   payment_obj.project.archive_mode,
+                                                                                   default_api_calls_count)
+                else:
+                    payment_obj.project.api_token_count += calc_api_calls(value, 'ablock',
+                                                                          payment_obj.project.archive_mode,
+                                                                          default_api_calls_count)
+
+                payment_obj.pending = False
+
+                if payment_obj.project.api_token_count > payment_obj.project.used_api_tokens \
+                        or (payment_obj.project.api_token_count > 0 and payment_obj.project.used_api_tokens is None):
+                    payment_obj.project.active = True
+
+                if not payment_obj.amount:
+                    payment_obj.amount_ablock = float(Web3.fromWei(value, 'ether'))
+                else:
+                    payment_obj.amount_ablock += float(Web3.fromWei(value, 'ether'))
 
                 payment_obj.project.expires = datetime.datetime.now() + datetime.timedelta(days=30)

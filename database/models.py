@@ -23,9 +23,12 @@ class Payment(db.Entity):
 
     tier1_expected_amount = Required(float)
     tier2_expected_amount = Required(float)
+    tier1_expected_amount_ablock = Required(float)
+    tier2_expected_amount_ablock = Required(float)
 
     tx_hash = Optional(str)
     amount = Optional(float)
+    amount_ablock = Optional(float)
     start_time = Required(datetime)
 
     project = Required(Project, reverse='payments')

@@ -9,7 +9,7 @@ from threading import Thread
 from aiohttp import web
 from database.models import commit, db_session, select, Project, Payment
 from util.eth_payments import Web3Helper
-from util import get_eth_amount, min_payment_amount_tier1, min_payment_amount_tier2
+from util import get_eth_amount, get_ablock_amount, min_payment_amount_tier1, min_payment_amount_tier2, discount
 
 LOGLEVEL = os.environ.get('LOGLEVEL', 'INFO').upper()
 logging.basicConfig(level=LOGLEVEL, stream=sys.stdout,
@@ -28,11 +28,17 @@ async def create_project(request: web.Request):
     # fetch eth
     tier1_expected_amount = get_eth_amount(min_payment_amount_tier1)
     tier2_expected_amount = get_eth_amount(min_payment_amount_tier2)
+    tier1_expected_amount_ablock = get_ablock_amount(min_payment_amount_tier1 * discount)
+    tier2_expected_amount_ablock = get_ablock_amount(min_payment_amount_tier2 * discount)
     if not tier1_expected_amount or not tier2_expected_amount:
         return web.json_response({
             'error': 'Internal Server Error: Failed to get coinbase ETH prices, please try again'
         })
 
+    if not tier1_expected_amount_ablock or not tier2_expected_amount_ablock:
+        return web.json_response({
+            'error': 'Internal Server Error: Failed to get uniswap ablock prices, please try again'
+        })
     eth_address = await web3_helper.get_eth_address()
     project_name = str(uuid.uuid4())
     start_time = datetime.datetime.now()
@@ -41,7 +47,6 @@ async def create_project(request: web.Request):
 
     logging.info(f'Creating project {project_name} with payment amounts: tier1 {tier1_expected_amount} '
                  f'tier2 {tier1_expected_amount}')
-
     error = 0 if tier1_expected_amount is not None and tier2_expected_amount is not None else -1099
     try:
         if eth_address is None:
@@ -63,6 +68,9 @@ async def create_project(request: web.Request):
                 project=project,
                 tier1_expected_amount=tier1_expected_amount,
                 tier2_expected_amount=tier2_expected_amount,
+                tier1_expected_amount_ablock=tier1_expected_amount_ablock,
+                tier2_expected_amount_ablock=tier2_expected_amount_ablock,
+                amount_ablock=0
             )
 
             commit()
@@ -87,6 +95,8 @@ async def create_project(request: web.Request):
             'payment_address': eth_address,
             'payment_amount_tier1': tier1_expected_amount,
             'payment_amount_tier2': tier2_expected_amount,
+            'payment_amount_tier1_ablock': tier1_expected_amount_ablock,
+            'payment_amount_tier2_ablock': tier2_expected_amount_ablock,
             'expiry_time': payment_expires.strftime("%Y-%m-%d %H:%M:%S EST")
         },
         'error': error
