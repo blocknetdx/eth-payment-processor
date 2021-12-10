@@ -4,10 +4,12 @@ import time
 import ccxt
 import json
 from web3 import Web3
+from util.price_aablock import get_price_aablock
 
 min_payment_amount_tier1 = float(os.environ.get('PAYMENT_AMOUNT_TIER1', 35))
 min_payment_amount_tier2 = float(os.environ.get('PAYMENT_AMOUNT_TIER2', 200))
-discount = float((100 - os.environ.get('DISCOUNT', 20))/100)
+discount_ablock = float((100 - os.environ.get('DISCOUNT_ABLOCK', 20))/100)
+discount_aablock = float((100 - os.environ.get('DISCOUNT_AABLOCK', 0))/100)
 
 aBlock = Web3.toChecksumAddress('0xe692c8d72bd4ac7764090d54842a305546dd1de5')
 USDT = Web3.toChecksumAddress('0xdac17f958d2ee523a2206206994597c13d831ec7')
@@ -15,21 +17,23 @@ USDT = Web3.toChecksumAddress('0xdac17f958d2ee523a2206206994597c13d831ec7')
 coinbase = ccxt.coinbasepro()
 last_amount_update_time_eth = None
 last_amount_update_time_ablock = None
+last_amount_update_time_aablock = None
 eth_price = None
 ablock_price = None
+aablock_price = None
 
 ETH_HOST = os.environ.get('ETH_HOST', 'localhost')
 ETH_PORT = os.environ.get('ETH_PORT', 8546)
-w3 = Web3(Web3.WebsocketProvider('ws://{}:{}'.format(ETH_HOST, ETH_PORT)))
-
+# w3 = Web3(Web3.WebsocketProvider('ws://{}:{}'.format(ETH_HOST, ETH_PORT)))
+w3_eth = Web3(Web3.HTTPProvider('https://:fa596017058b49ad998047ad81c45662@mainnet.infura.io/v3/4300a3997f8e4f9cbfffeda1f56ffa20'))
 
 with open("util/uniswap_router_abi.json", 'r') as file:
     UniswapRouterABI = json.load(file)
 
 
 def get_price(address1, address2):
-    router = w3.eth.contract(address=UniswapRouterABI['contractAddress'], abi=UniswapRouterABI['abi'])
-    token = w3.toWei(1, 'Ether')
+    router = w3_eth.eth.contract(address=UniswapRouterABI['contractAddress'], abi=UniswapRouterABI['abi'])
+    token = w3_eth.toWei(1, 'Ether')
 
     price = router.functions.getAmountsOut(token, [address1, address2]).call()
     price = price[1] / (10 ** 2)
@@ -71,4 +75,23 @@ def get_ablock_amount(amount):
         return None
 
     return float('{:.6f}'.format(amount / ablock_price))
+
+
+def get_aablock_amount(amount):
+    global aablock_price
+    global last_amount_update_time_aablock
+
+
+    try:
+        if last_amount_update_time_aablock is None or (int(time.time()) - 60) > last_amount_update_time_aablock:
+            aablock_price = get_price_aablock()
+            last_amount_update_time_aablock = int(time.time())
+    except Exception as e:
+        logging.info('Pangolin aablock price lookup failed with error: {}'.format(e))
+        return None
+
+    if aablock_price is None:
+        return None
+
+    return float('{:.6f}'.format(amount / aablock_price))
 
