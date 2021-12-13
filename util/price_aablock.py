@@ -6,7 +6,15 @@ with open("util/pool.json") as poolFile :
 with open("util/ERC20.json") as erc20File:
     ERC20ABI = json.load(erc20File)
 
-provider_avax = Web3(Web3.HTTPProvider('https://api.avax.network/ext/bc/C/rpc'))
+AVAX_HOST = os.environ.get('AVAX_HOST','')
+AVAX_PORT = os.environ.get('AVAX_PORT','')
+AVAX_HOST_TYPE = os.environ.get('AVAX_HOST_TYPE','http')
+
+if AVAX_HOST_TYPE == 'http':
+    provider_avax = Web3(Web3.HTTPProvider(f'https://{AVAX_HOST}:{AVAX_PORT}/ext/bc/C/rpc'))
+elif AVAX_HOST_TYPE == 'ws':
+    provider_avax = Web3(Web3.WebsocketProvider(f'ws://{AVAX_HOST}:{AVAX_PORT}/ext/bc/C/rpc'))
+
 usdtContract_address = '0x9ee0a4e21bd333a6bb2ab298194320b8daa26516'
 aablockContract_address = '0xfFc53c9d889B4C0bfC1ba7B9E253C615300d9fFD'
 
