@@ -59,7 +59,7 @@ class Web3Helper:
         ETH_HOST_TYPE = os.environ.get('ETH_HOST_TYPE','http')
 
         if AVAX_HOST_TYPE == 'http':
-            self.w3_avax = Web3(Web3.HTTPProvider(f'https://{AVAX_HOST}:{AVAX_PORT}/ext/bc/C/rpc'))
+            self.w3_avax = Web3(Web3.HTTPProvider(f'http://{AVAX_HOST}:{AVAX_PORT}/ext/bc/C/rpc'))
         elif AVAX_HOST_TYPE == 'ws':
             self.w3_avax = Web3(Web3.WebsocketProvider(f'ws://{AVAX_HOST}:{AVAX_PORT}/ext/bc/C/rpc'))
 
