@@ -56,7 +56,7 @@ def get_eth_amount(amount):
             eth_price = get_price(WETH,USDT)/(10**4)
             last_amount_update_time_eth = int(time.time())
     except Exception as e:
-        logging.info('coinbase eth price lookup failed with error: {}'.format(e))
+        logging.info('geth price lookup failed with error: {}'.format(e))
         return None
 
     if eth_price is None:
