@@ -51,12 +51,12 @@ def calc_api_calls(payment_amount_wei, token, archival_mode: bool, def_api_calls
 
 class Web3Helper:
     def __init__(self):
-        self.AVAX_HOST = os.environ.get('AVAX_HOST','')
-        self.AVAX_PORT = os.environ.get('AVAX_PORT','')
-        self.AVAX_HOST_TYPE = os.environ.get('AVAX_HOST_TYPE','http')
-        self.ETH_HOST = os.environ.get('ETH_HOST', '')
-        self.ETH_PORT = os.environ.get('ETH_PORT', '')
-        self.ETH_HOST_TYPE = os.environ.get('ETH_HOST_TYPE','http')
+        AVAX_HOST = os.environ.get('AVAX_HOST','')
+        AVAX_PORT = os.environ.get('AVAX_PORT','')
+        AVAX_HOST_TYPE = os.environ.get('AVAX_HOST_TYPE','http')
+        ETH_HOST = os.environ.get('ETH_HOST', '')
+        ETH_PORT = os.environ.get('ETH_PORT', '')
+        ETH_HOST_TYPE = os.environ.get('ETH_HOST_TYPE','http')
 
         if AVAX_HOST_TYPE == 'http':
             self.w3_avax = Web3(Web3.HTTPProvider(f'https://{AVAX_HOST}:{AVAX_PORT}/ext/bc/C/rpc'))
