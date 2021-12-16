@@ -51,12 +51,25 @@ def calc_api_calls(payment_amount_wei, token, archival_mode: bool, def_api_calls
 
 class Web3Helper:
     def __init__(self):
-        self.ETH_HOST = os.environ.get('ETH_HOST', 'localhost')
-        self.ETH_PORT = os.environ.get('ETH_PORT', 8546)
-        self.AVAX_URL = os.environ.get('AVAX_URL', 'https://api.avax.network/ext/bc/C/rpc')
-        self.w3 = Web3(Web3.WebsocketProvider('ws://{}:{}'.format(self.ETH_HOST, self.ETH_PORT)))
-        self.w3_avax = Web3(Web3.HTTPProvider('{}'.format(self.AVAX_URL)))
-        self.w3_accounts = Web3(Web3.WebsocketProvider('ws://{}:{}'.format(self.ETH_HOST, self.ETH_PORT)))
+        self.AVAX_HOST = os.environ.get('AVAX_HOST','')
+        self.AVAX_PORT = os.environ.get('AVAX_PORT','')
+        self.AVAX_HOST_TYPE = os.environ.get('AVAX_HOST_TYPE','http')
+        self.ETH_HOST = os.environ.get('ETH_HOST', '')
+        self.ETH_PORT = os.environ.get('ETH_PORT', '')
+        self.ETH_HOST_TYPE = os.environ.get('ETH_HOST_TYPE','http')
+
+        if AVAX_HOST_TYPE == 'http':
+            self.w3_avax = Web3(Web3.HTTPProvider(f'https://{AVAX_HOST}:{AVAX_PORT}/ext/bc/C/rpc'))
+        elif AVAX_HOST_TYPE == 'ws':
+            self.w3_avax = Web3(Web3.WebsocketProvider(f'ws://{AVAX_HOST}:{AVAX_PORT}/ext/bc/C/rpc'))
+
+        if ETH_HOST_TYPE == 'http':
+            self.w3 = Web3(Web3.HTTPProvider('http://{}:{}'.format(ETH_HOST, ETH_PORT)))
+            self.w3_accounts = Web3(Web3.HTTPProvider('http://{}:{}'.format(ETH_HOST, ETH_PORT)))
+        elif ETH_HOST_TYPE == 'ws':
+            self.w3 = Web3(Web3.HTTPProvider('http://{}:{}'.format(ETH_HOST, ETH_PORT)))
+            self.w3_accounts = Web3(Web3.HTTPProvider('http://{}:{}'.format(ETH_HOST, ETH_PORT)))
+
         self.contract_ablock = self.w3.eth.contract(address=ablock_contract_address, abi=abi)
         self.contract_aablock = self.w3_avax.eth.contract(address=aablock_contract_address, abi=abi)
         self.accounts = []
