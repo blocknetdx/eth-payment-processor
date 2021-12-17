@@ -23,16 +23,16 @@ aablock_price = None
 
 ETH_HOST = os.environ.get('ETH_HOST', '')
 ETH_PORT = os.environ.get('ETH_PORT', '')
-ETH_HOST_TYPE = os.environ.get('ETH_HOST_TYPE','http')
+ETH_HOST_TYPE = os.environ.get('ETH_HOST_TYPE','')
 AVAX_HOST = os.environ.get('AVAX_HOST','')
 AVAX_PORT = os.environ.get('AVAX_PORT','')
-AVAX_HOST_TYPE = os.environ.get('AVAX_HOST_TYPE','http')
+AVAX_HOST_TYPE = os.environ.get('AVAX_HOST_TYPE','')
 
 
-if ETH_HOST_TYPE == 'http':
-    w3_conn = Web3(Web3.HTTPProvider('http://{}:{}'.format(ETH_HOST, ETH_PORT)))
-elif ETH_HOST_TYPE == 'ws':
-    w3_conn = Web3(Web3.WebsocketProvider('ws://{}:{}'.format(ETH_HOST, ETH_PORT)))
+if ETH_HOST_TYPE in ['http','https']:
+    w3_conn = Web3(Web3.HTTPProvider(f'{ETH_HOST_TYPE}://{ETH_HOST}:{ETH_PORT}'))
+elif ETH_HOST_TYPE in ['ws','wss']:
+    w3_conn = Web3(Web3.WebsocketProvider(f'{ETH_HOST_TYPE}://{ETH_HOST}:{ETH_PORT}'))
 
 with open("util/uniswap_router_abi.json", 'r') as file:
     UniswapRouterABI = json.load(file)

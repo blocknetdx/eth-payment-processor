@@ -53,22 +53,22 @@ class Web3Helper:
     def __init__(self):
         AVAX_HOST = os.environ.get('AVAX_HOST','')
         AVAX_PORT = os.environ.get('AVAX_PORT','')
-        AVAX_HOST_TYPE = os.environ.get('AVAX_HOST_TYPE','http')
+        AVAX_HOST_TYPE = os.environ.get('AVAX_HOST_TYPE','')
         ETH_HOST = os.environ.get('ETH_HOST', '')
         ETH_PORT = os.environ.get('ETH_PORT', '')
-        ETH_HOST_TYPE = os.environ.get('ETH_HOST_TYPE','http')
+        ETH_HOST_TYPE = os.environ.get('ETH_HOST_TYPE','')
 
-        if AVAX_HOST_TYPE == 'http':
-            self.w3_avax = Web3(Web3.HTTPProvider(f'http://{AVAX_HOST}:{AVAX_PORT}/ext/bc/C/rpc'))
-        elif AVAX_HOST_TYPE == 'ws':
-            self.w3_avax = Web3(Web3.WebsocketProvider(f'ws://{AVAX_HOST}:{AVAX_PORT}/ext/bc/C/rpc'))
+        if AVAX_HOST_TYPE in ['http', 'https']:
+            self.w3_avax = Web3(Web3.HTTPProvider(f'{AVAX_HOST_TYPE}://{AVAX_HOST}:{AVAX_PORT}/ext/bc/C/rpc'))
+        elif AVAX_HOST_TYPE in ['ws', 'wss']:
+            self.w3_avax = Web3(Web3.WebsocketProvider(f'{AVAX_HOST_TYPE}://{AVAX_HOST}:{AVAX_PORT}/ext/bc/C/rpc'))
 
-        if ETH_HOST_TYPE == 'http':
-            self.w3 = Web3(Web3.HTTPProvider('http://{}:{}'.format(ETH_HOST, ETH_PORT)))
-            self.w3_accounts = Web3(Web3.HTTPProvider('http://{}:{}'.format(ETH_HOST, ETH_PORT)))
-        elif ETH_HOST_TYPE == 'ws':
-            self.w3 = Web3(Web3.WebsocketProvider('ws://{}:{}'.format(ETH_HOST, ETH_PORT)))
-            self.w3_accounts = Web3(Web3.WebsocketProvider('ws://{}:{}'.format(ETH_HOST, ETH_PORT)))
+        if ETH_HOST_TYPE in ['http','https']:
+            self.w3 = Web3(Web3.HTTPProvider(f'{ETH_HOST_TYPE}://{ETH_HOST}:{ETH_PORT}'))
+            self.w3_accounts = Web3(Web3.HTTPProvider(f'{ETH_HOST_TYPE}://{ETH_HOST}:{ETH_PORT}'))
+        elif ETH_HOST_TYPE in ['ws','wss':]
+            self.w3 = Web3(Web3.WebsocketProvider(f'{ETH_HOST_TYPE}://{ETH_HOST}:{ETH_PORT}'))
+            self.w3_accounts = Web3(Web3.WebsocketProvider(f'{ETH_HOST_TYPE}://{ETH_HOST}:{ETH_PORT}'))
 
         self.contract_ablock = self.w3.eth.contract(address=ablock_contract_address, abi=abi)
         self.contract_aablock = self.w3_avax.eth.contract(address=aablock_contract_address, abi=abi)
