@@ -23,10 +23,10 @@ class Payment(db.Entity):
 
     tier1_expected_amount = Required(float)
     tier2_expected_amount = Required(float)
-    tier1_expected_amount_ablock = Required(float)
-    tier2_expected_amount_ablock = Required(float)
-    tier1_expected_amount_aablock = Required(float)
-    tier2_expected_amount_aablock = Required(float)
+    tier1_expected_amount_ablock = Optional(float)
+    tier2_expected_amount_ablock = Optional(float)
+    tier1_expected_amount_aablock = Optional(float)
+    tier2_expected_amount_aablock = Optional(float)
 
     tx_hash = Optional(str)
     amount = Optional(float)
