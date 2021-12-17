@@ -66,7 +66,7 @@ class Web3Helper:
         if ETH_HOST_TYPE in ['http','https']:
             self.w3 = Web3(Web3.HTTPProvider(f'{ETH_HOST_TYPE}://{ETH_HOST}:{ETH_PORT}'))
             self.w3_accounts = Web3(Web3.HTTPProvider(f'{ETH_HOST_TYPE}://{ETH_HOST}:{ETH_PORT}'))
-        elif ETH_HOST_TYPE in ['ws','wss':]
+        elif ETH_HOST_TYPE in ['ws','wss']:
             self.w3 = Web3(Web3.WebsocketProvider(f'{ETH_HOST_TYPE}://{ETH_HOST}:{ETH_PORT}'))
             self.w3_accounts = Web3(Web3.WebsocketProvider(f'{ETH_HOST_TYPE}://{ETH_HOST}:{ETH_PORT}'))
 
