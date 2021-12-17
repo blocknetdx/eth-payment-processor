@@ -56,7 +56,7 @@ def get_eth_amount(amount):
             eth_price = get_price(WETH,USDT)/(10**4)
             last_amount_update_time_eth = int(time.time())
     except Exception as e:
-        logging.info('geth price lookup failed with error: {}'.format(e))
+        logging.critical('geth price lookup failed with error:', exc_info=True)
         return None
 
     if eth_price is None:
@@ -74,7 +74,7 @@ def get_ablock_amount(amount):
             ablock_price = get_price(aBlock, USDT)
             last_amount_update_time_ablock = int(time.time())
     except Exception as e:
-        logging.info('Uniswap ablock price lookup failed with error: {}'.format(e))
+        logging.critical('Uniswap ablock price lookup failed with error:',exc_info=True)
         return None
 
     if ablock_price is None:
@@ -93,7 +93,7 @@ def get_aablock_amount(amount):
             aablock_price = get_price_aablock()
             last_amount_update_time_aablock = int(time.time())
     except Exception as e:
-        logging.info('Pangolin aablock price lookup failed with error: {}'.format(e))
+        logging.critical('Pangolin aablock price lookup failed with error:', exc_info=True)
         return None
 
     if aablock_price is None:
