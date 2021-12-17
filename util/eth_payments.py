@@ -67,8 +67,8 @@ class Web3Helper:
             self.w3 = Web3(Web3.HTTPProvider('http://{}:{}'.format(ETH_HOST, ETH_PORT)))
             self.w3_accounts = Web3(Web3.HTTPProvider('http://{}:{}'.format(ETH_HOST, ETH_PORT)))
         elif ETH_HOST_TYPE == 'ws':
-            self.w3 = Web3(Web3.HTTPProvider('http://{}:{}'.format(ETH_HOST, ETH_PORT)))
-            self.w3_accounts = Web3(Web3.HTTPProvider('http://{}:{}'.format(ETH_HOST, ETH_PORT)))
+            self.w3 = Web3(Web3.WebsocketProvider('ws://{}:{}'.format(ETH_HOST, ETH_PORT)))
+            self.w3_accounts = Web3(Web3.WebsocketProvider('ws://{}:{}'.format(ETH_HOST, ETH_PORT)))
 
         self.contract_ablock = self.w3.eth.contract(address=ablock_contract_address, abi=abi)
         self.contract_aablock = self.w3_avax.eth.contract(address=aablock_contract_address, abi=abi)
