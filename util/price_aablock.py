@@ -20,7 +20,7 @@ usdtContract_address = '0x9ee0a4e21bd333a6bb2ab298194320b8daa26516'
 aablockContract_address = '0xfFc53c9d889B4C0bfC1ba7B9E253C615300d9fFD'
 
 
-def get_price_aablock():
+async def get_price_aablock():
 
     def price(reserveToken0, reserveToken1, token0Address, token1Address):
 

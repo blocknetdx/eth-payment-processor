@@ -38,7 +38,7 @@ with open("util/uniswap_router_abi.json", 'r') as file:
     UniswapRouterABI = json.load(file)
 
 
-def get_price(address1, address2):
+async def get_price(address1, address2):
     router = w3_conn.eth.contract(address=UniswapRouterABI['contractAddress'], abi=UniswapRouterABI['abi'])
     token = w3_conn.toWei(1, 'Ether')
 
@@ -47,16 +47,16 @@ def get_price(address1, address2):
     return price
 
 
-def get_eth_amount(amount):
+async def get_eth_amount(amount):
     global eth_price
     global last_amount_update_time_eth
 
     try:
         if last_amount_update_time_eth is None or (int(time.time()) - 60) > last_amount_update_time_eth:
-            eth_price = get_price(WETH,USDT)/(10**4)
+            eth_price = await get_price(WETH,USDT)/(10**4)
             last_amount_update_time_eth = int(time.time())
     except Exception as e:
-        logging.critical('geth price lookup failed with error:', exc_info=True)
+        logging.critical('Geth eth price lookup failed with error:', exc_info=True)
         return None
 
     if eth_price is None:
@@ -65,13 +65,13 @@ def get_eth_amount(amount):
     return float('{:.6f}'.format(amount / eth_price))
 
 
-def get_ablock_amount(amount):
+async def get_ablock_amount(amount):
     global ablock_price
     global last_amount_update_time_ablock
 
     try:
         if last_amount_update_time_ablock is None or (int(time.time()) - 60) > last_amount_update_time_ablock:
-            ablock_price = get_price(aBlock, USDT)
+            ablock_price = await get_price(aBlock, USDT)
             last_amount_update_time_ablock = int(time.time())
     except Exception as e:
         logging.critical('Uniswap ablock price lookup failed with error:',exc_info=True)
@@ -83,14 +83,14 @@ def get_ablock_amount(amount):
     return float('{:.6f}'.format(amount / ablock_price))
 
 
-def get_aablock_amount(amount):
+async def get_aablock_amount(amount):
     global aablock_price
     global last_amount_update_time_aablock
 
 
     try:
         if last_amount_update_time_aablock is None or (int(time.time()) - 60) > last_amount_update_time_aablock:
-            aablock_price = get_price_aablock()
+            aablock_price = await get_price_aablock()
             last_amount_update_time_aablock = int(time.time())
     except Exception as e:
         logging.critical('Pangolin aablock price lookup failed with error:', exc_info=True)
