@@ -1,4 +1,5 @@
 from web3 import Web3
+from web3.eth import AsyncEth
 import json
 import os
 
@@ -12,7 +13,7 @@ AVAX_PORT = os.environ.get('AVAX_PORT','')
 AVAX_HOST_TYPE = os.environ.get('AVAX_HOST_TYPE','')
 
 if AVAX_HOST_TYPE in ['http','https']:
-    provider_avax = Web3(Web3.HTTPProvider(f'{AVAX_HOST_TYPE}://{AVAX_HOST}:{AVAX_PORT}/ext/bc/C/rpc'))
+    provider_avax = Web3(Web3.HTTPProvider(f'{AVAX_HOST_TYPE}://{AVAX_HOST}:{AVAX_PORT}/ext/bc/C/rpc'), modules={'eth': (AsyncEth,)}, middlewares=[])
 elif AVAX_HOST_TYPE in ['ws','wss']:
     provider_avax = Web3(Web3.WebsocketProvider(f'{AVAX_HOST_TYPE}://{AVAX_HOST}:{AVAX_PORT}/ext/bc/C/rpc'))
 

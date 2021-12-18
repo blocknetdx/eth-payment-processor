@@ -5,6 +5,7 @@ import json
 import datetime
 
 from web3 import Web3
+from web3.eth import AsyncEth
 from database.models import Payment, db_session
 from util import get_eth_amount, get_ablock_amount, get_aablock_amount, min_payment_amount_tier1, \
                  min_payment_amount_tier2, discount_ablock, discount_aablock
@@ -59,13 +60,13 @@ class Web3Helper:
         ETH_HOST_TYPE = os.environ.get('ETH_HOST_TYPE','')
 
         if AVAX_HOST_TYPE in ['http', 'https']:
-            self.w3_avax = Web3(Web3.HTTPProvider(f'{AVAX_HOST_TYPE}://{AVAX_HOST}:{AVAX_PORT}/ext/bc/C/rpc'))
+            self.w3_avax = Web3(Web3.AsyncHTTPProvider(f'{AVAX_HOST_TYPE}://{AVAX_HOST}:{AVAX_PORT}/ext/bc/C/rpc'), modules={'eth': (AsyncEth,)}, middlewares=[])
         elif AVAX_HOST_TYPE in ['ws', 'wss']:
             self.w3_avax = Web3(Web3.WebsocketProvider(f'{AVAX_HOST_TYPE}://{AVAX_HOST}:{AVAX_PORT}/ext/bc/C/rpc'))
 
         if ETH_HOST_TYPE in ['http','https']:
-            self.w3 = Web3(Web3.HTTPProvider(f'{ETH_HOST_TYPE}://{ETH_HOST}:{ETH_PORT}'))
-            self.w3_accounts = Web3(Web3.HTTPProvider(f'{ETH_HOST_TYPE}://{ETH_HOST}:{ETH_PORT}'))
+            self.w3 = Web3(Web3.AsyncHTTPProvider(f'{ETH_HOST_TYPE}://{ETH_HOST}:{ETH_PORT}'), modules={'eth': (AsyncEth,)}, middlewares=[])
+            self.w3_accounts = Web3(Web3.AsyncHTTPProvider(f'{ETH_HOST_TYPE}://{ETH_HOST}:{ETH_PORT}'), modules={'eth': (AsyncEth,)}, middlewares=[])
         elif ETH_HOST_TYPE in ['ws','wss']:
             self.w3 = Web3(Web3.WebsocketProvider(f'{ETH_HOST_TYPE}://{ETH_HOST}:{ETH_PORT}'))
             self.w3_accounts = Web3(Web3.WebsocketProvider(f'{ETH_HOST_TYPE}://{ETH_HOST}:{ETH_PORT}'))

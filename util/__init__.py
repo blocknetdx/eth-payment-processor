@@ -3,6 +3,7 @@ import os
 import time
 import json
 from web3 import Web3
+from web3.eth import AsyncEth
 from util.price_aablock import get_price_aablock
 
 min_payment_amount_tier1 = float(os.environ.get('PAYMENT_AMOUNT_TIER1', 35))
@@ -30,7 +31,7 @@ AVAX_HOST_TYPE = os.environ.get('AVAX_HOST_TYPE','')
 
 
 if ETH_HOST_TYPE in ['http','https']:
-    w3_conn = Web3(Web3.HTTPProvider(f'{ETH_HOST_TYPE}://{ETH_HOST}:{ETH_PORT}'))
+    w3_conn = Web3(Web3.HTTPProvider(f'{ETH_HOST_TYPE}://{ETH_HOST}:{ETH_PORT}'), modules={'eth': (AsyncEth,)}, middlewares=[])
 elif ETH_HOST_TYPE in ['ws','wss']:
     w3_conn = Web3(Web3.WebsocketProvider(f'{ETH_HOST_TYPE}://{ETH_HOST}:{ETH_PORT}'))
 
