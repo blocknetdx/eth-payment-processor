@@ -27,12 +27,12 @@ api_count_cache = dict()
 async def create_project(request: web.Request):
     logging.info('Creating new pending project')
     # fetch eth
-    tier1_expected_amount = get_eth_amount(min_payment_amount_tier1)
-    tier2_expected_amount = get_eth_amount(min_payment_amount_tier2)
-    tier1_expected_amount_ablock = get_ablock_amount(min_payment_amount_tier1 * discount_ablock)
-    tier2_expected_amount_ablock = get_ablock_amount(min_payment_amount_tier2 * discount_ablock)
-    tier1_expected_amount_aablock = get_aablock_amount(min_payment_amount_tier1 * discount_aablock)
-    tier2_expected_amount_aablock = get_aablock_amount(min_payment_amount_tier2 * discount_aablock)
+    tier1_expected_amount = await get_eth_amount(min_payment_amount_tier1)
+    tier2_expected_amount = await get_eth_amount(min_payment_amount_tier2)
+    tier1_expected_amount_ablock = await get_ablock_amount(min_payment_amount_tier1 * discount_ablock)
+    tier2_expected_amount_ablock = await get_ablock_amount(min_payment_amount_tier2 * discount_ablock)
+    tier1_expected_amount_aablock = await get_aablock_amount(min_payment_amount_tier1 * discount_aablock)
+    tier2_expected_amount_aablock = await get_aablock_amount(min_payment_amount_tier2 * discount_aablock)
 
     if not tier1_expected_amount or not tier2_expected_amount:
         return web.json_response({
