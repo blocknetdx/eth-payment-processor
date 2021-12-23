@@ -1,5 +1,4 @@
 from web3 import Web3
-from web3.eth import AsyncEth
 import json
 import os
 
@@ -13,7 +12,7 @@ AVAX_PORT = os.environ.get('AVAX_PORT','')
 AVAX_HOST_TYPE = os.environ.get('AVAX_HOST_TYPE','')
 
 if AVAX_HOST_TYPE in ['http','https']:
-    provider_avax = Web3(Web3.HTTPProvider(f'{AVAX_HOST_TYPE}://{AVAX_HOST}:{AVAX_PORT}/ext/bc/C/rpc'), modules={'eth': (AsyncEth,)}, middlewares=[])
+    provider_avax = Web3(Web3.HTTPProvider(f'{AVAX_HOST_TYPE}://{AVAX_HOST}:{AVAX_PORT}/ext/bc/C/rpc'))
 elif AVAX_HOST_TYPE in ['ws','wss']:
     provider_avax = Web3(Web3.WebsocketProvider(f'{AVAX_HOST_TYPE}://{AVAX_HOST}:{AVAX_PORT}/ext/bc/C/rpc'))
 
@@ -21,7 +20,7 @@ usdtContract_address = '0x9ee0a4e21bd333a6bb2ab298194320b8daa26516'
 aablockContract_address = '0xfFc53c9d889B4C0bfC1ba7B9E253C615300d9fFD'
 
 
-async def get_price_aablock():
+def get_price_aablock():
 
     def price(reserveToken0, reserveToken1, token0Address, token1Address):
 

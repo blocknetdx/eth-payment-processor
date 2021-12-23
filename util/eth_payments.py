@@ -5,7 +5,6 @@ import json
 import datetime
 
 from web3 import Web3
-from web3.eth import AsyncEth
 from database.models import Payment, db_session
 from util import get_eth_amount, get_ablock_amount, get_aablock_amount, min_payment_amount_tier1, \
                  min_payment_amount_tier2, discount_ablock, discount_aablock
@@ -52,66 +51,103 @@ def calc_api_calls(payment_amount_wei, token, archival_mode: bool, def_api_calls
 
 class Web3Helper:
     def __init__(self):
-        AVAX_HOST = os.environ.get('AVAX_HOST','')
-        AVAX_PORT = os.environ.get('AVAX_PORT','')
-        AVAX_HOST_TYPE = os.environ.get('AVAX_HOST_TYPE','')
-        ETH_HOST = os.environ.get('ETH_HOST', '')
-        ETH_PORT = os.environ.get('ETH_PORT', '')
-        ETH_HOST_TYPE = os.environ.get('ETH_HOST_TYPE','')
+        self.AVAX_HOST = os.environ.get('AVAX_HOST','')
+        self.AVAX_PORT = os.environ.get('AVAX_PORT','')
+        self.AVAX_HOST_TYPE = os.environ.get('AVAX_HOST_TYPE','')
+        self.ETH_HOST = os.environ.get('ETH_HOST', '')
+        self.ETH_PORT = os.environ.get('ETH_PORT', '')
+        self.ETH_HOST_TYPE = os.environ.get('ETH_HOST_TYPE','')
 
-        if AVAX_HOST_TYPE in ['http', 'https']:
-            self.w3_avax = Web3(Web3.AsyncHTTPProvider(f'{AVAX_HOST_TYPE}://{AVAX_HOST}:{AVAX_PORT}/ext/bc/C/rpc'), modules={'eth': (AsyncEth,)}, middlewares=[])
-        elif AVAX_HOST_TYPE in ['ws', 'wss']:
-            self.w3_avax = Web3(Web3.WebsocketProvider(f'{AVAX_HOST_TYPE}://{AVAX_HOST}:{AVAX_PORT}/ext/bc/C/rpc'))
+        if self.AVAX_HOST_TYPE in ['http', 'https'] and self.AVAX_HOST!='':
+            self.w3_avax = Web3(Web3.HTTPProvider(f'{self.AVAX_HOST_TYPE}://{self.AVAX_HOST}:{self.AVAX_PORT}/ext/bc/C/rpc'))
+            self.w3_avax_accounts = Web3(Web3.HTTPProvider(f'{self.AVAX_HOST_TYPE}://{self.AVAX_HOST}:{self.AVAX_PORT}/ext/bc/C/rpc'))
+        elif self.AVAX_HOST_TYPE in ['ws', 'wss'] and self.AVAX_HOST!='':
+            self.w3_avax = Web3(Web3.WebsocketProvider(f'{self.AVAX_HOST_TYPE}://{self.AVAX_HOST}:{self.AVAX_PORT}/ext/bc/C/rpc'))
+            self.w3_avax_accounts = Web3(Web3.WebsocketProvider(f'{self.AVAX_HOST_TYPE}://{self.AVAX_HOST}:{Aself.VAX_PORT}/ext/bc/C/rpc'))
 
-        if ETH_HOST_TYPE in ['http','https']:
-            self.w3 = Web3(Web3.AsyncHTTPProvider(f'{ETH_HOST_TYPE}://{ETH_HOST}:{ETH_PORT}'), modules={'eth': (AsyncEth,)}, middlewares=[])
-            self.w3_accounts = Web3(Web3.AsyncHTTPProvider(f'{ETH_HOST_TYPE}://{ETH_HOST}:{ETH_PORT}'), modules={'eth': (AsyncEth,)}, middlewares=[])
-        elif ETH_HOST_TYPE in ['ws','wss']:
-            self.w3 = Web3(Web3.WebsocketProvider(f'{ETH_HOST_TYPE}://{ETH_HOST}:{ETH_PORT}'))
-            self.w3_accounts = Web3(Web3.WebsocketProvider(f'{ETH_HOST_TYPE}://{ETH_HOST}:{ETH_PORT}'))
+        if self.ETH_HOST_TYPE in ['http','https'] and self.ETH_HOST!='':
+            self.w3 = Web3(Web3.HTTPProvider(f'{self.ETH_HOST_TYPE}://{self.ETH_HOST}:{self.ETH_PORT}'))
+            self.w3_accounts = Web3(Web3.HTTPProvider(f'{self.ETH_HOST_TYPE}://{self.ETH_HOST}:{self.ETH_PORT}'))
+        elif self.ETH_HOST_TYPE in ['ws','wss'] and self.ETH_HOST!='':
+            self.w3 = Web3(Web3.WebsocketProvider(f'{self.ETH_HOST_TYPE}://{self.ETH_HOST}:{self.ETH_PORT}'))
+            self.w3_accounts = Web3(Web3.WebsocketProvider(f'{self.ETH_HOST_TYPE}://{self.ETH_HOST}:{self.ETH_PORT}'))
 
-        self.contract_ablock = self.w3.eth.contract(address=ablock_contract_address, abi=abi)
-        self.contract_aablock = self.w3_avax.eth.contract(address=aablock_contract_address, abi=abi)
-        self.accounts = []
+        if self.ETH_HOST_TYPE!='':
+            self.contract_ablock = self.w3.eth.contract(address=ablock_contract_address, abi=abi)
+        if self.AVAX_HOST_TYPE!='':
+            self.contract_aablock = self.w3_avax.eth.contract(address=aablock_contract_address, abi=abi)
+        self.eth_accounts = []
+        self.avax_accounts = []
 
-    def start(self):
-        latest = self.w3.eth.filter('latest')
-        while True:
-            try:
-                events = latest.get_new_entries()
-                if len(events) > 0:  # fetch latest account info
-                    self.fetch_accounts()
-                self.handle_events(events)
-            except Exception as e:
-                logging.error('error handling event {}'.format(e))
-            time.sleep(1)
+    def eth_start(self):
+        if self.ETH_HOST_TYPE!='':
+            latest = self.w3.eth.filter('latest')
+            while True:
+                try:
+                    events = latest.get_new_entries()
+                    if len(events) > 0:  # fetch latest account info
+                        self.fetch_eth_accounts()
+                    self.handle_eth_events(events)
+                except Exception as e:
+                    logging.error('error handling eth event {}'.format(e))
+                time.sleep(1)
+
+    def avax_start(self):
+        if self.AVAX_HOST_TYPE!='':
+            latest = self.w3_avax.eth.filter('latest')
+            while True:
+                try:
+                    events = latest.get_new_entries()
+                    if len(events) > 0:  # fetch latest account info
+                        self.fetch_avax_accounts()
+                    self.handle_avax_events(events)
+                except Exception as e:
+                    logging.error('error handling avax event {}'.format(e))
+                time.sleep(1)
 
     @db_session
-    def fetch_accounts(self):
-        query = Payment.select(lambda payment: payment.start_time is not None and payment.address is not None)
-        accounts = [payment.address for payment in query]
+    def fetch_eth_accounts(self):
+        query = Payment.select(lambda payment: payment.start_time is not None and payment.eth_address is not None)
+        accounts = [payment.eth_address for payment in query]
         if len(accounts) > 0:
-            self.accounts = accounts
+            self.eth_accounts = accounts
 
-    async def get_eth_address(self):
+    @db_session
+    def fetch_avax_accounts(self):
+        query = Payment.select(lambda payment: payment.start_time is not None and payment.avax_address is not None)
+        accounts = [payment.avax_address for payment in query]
+        if len(accounts) > 0:
+            self.avax_accounts = accounts
+
+    def get_eth_address(self):
         try:
             return self.w3_accounts.geth.personal.new_account('')
         except Exception as e:
             logging.error(e)
+            return None
 
+    def get_avax_address(self):
+        try:
+            return self.w3_avax.geth.personal.new_account('')
+        except Exception as e:
+            logging.error(e)
             return None
 
     @db_session
-    def handle_events(self, events):
+    def handle_eth_events(self, events):
         for event in events:
-            self.handle_event(event)
+            self.handle_eth_event(event)
+
+    @db_session
+    def handle_avax_events(self, events):
+        for event in events:
+            self.handle_avax_event(event)
 
     def check_aablock_balance(self):
         paid = {}
-        for contract_address in self.accounts:
+        for contract_address in self.eth_accounts:
             balance_contract = self.contract_aablock.functions.balanceOf(Web3.toChecksumAddress(contract_address)).call()
-            payment_obj = Payment.get(address=contract_address)
+            payment_obj = Payment.get(eth_address=contract_address)
             amount_aablock = balance_contract - Web3.toWei(payment_obj.amount_aablock, 'ether')
             if amount_aablock > 0:
                 paid[contract_address] = amount_aablock
@@ -127,7 +163,7 @@ class Web3Helper:
                 paid[contract_address] = amount_ablock
         return paid
 
-    def handle_event(self, event):
+    def handle_eth_event(self, event):
         block_hash = Web3.toHex(event)
         if not block_hash:
             return
@@ -138,7 +174,6 @@ class Web3Helper:
         logging.info('processing eth block {}'.format(block_hash))
         transactions = block['transactions']
         ablock_accounts = self.check_ablock_balance()
-        aablock_accounts = self.check_aablock_balance()
 
         for tx in transactions:
             tx_hash = tx['hash'].hex()
@@ -147,8 +182,8 @@ class Web3Helper:
             if value <= 0:
                 continue
 
-            if to_address in self.accounts:
-                payment_obj = Payment.get(address=to_address)
+            if to_address in self.eth_accounts:
+                payment_obj = Payment.get(eth_address=to_address)
                 if not payment_obj or not payment_obj.project:
                     logging.warning('payment received for unknown project'.format(tx_hash, to_address, value))
                     continue
@@ -219,7 +254,7 @@ class Web3Helper:
 
         if ablock_accounts:
             for to_address in ablock_accounts:
-                payment_obj = Payment.get(address=to_address)
+                payment_obj = Payment.get(eth_address=to_address)
                 value = ablock_accounts[to_address]
                 if payment_obj.pending:
                     if datetime.datetime.now() >= payment_obj.start_time + datetime.timedelta(hours=3, minutes=30):
@@ -254,9 +289,21 @@ class Web3Helper:
 
                 payment_obj.project.expires = datetime.datetime.now() + datetime.timedelta(days=30)
 
+    def handle_avax_event(self, event):
+        block_hash = Web3.toHex(event)
+        if not block_hash:
+            return
+        block = self.w3_avax.eth.getBlock(block_hash, full_transactions=True)
+        if 'transactions' not in block:
+            logging.warning('no transactions in avax block {}'.format(block_hash))
+            return
+        logging.info('processing avax block {}'.format(block_hash))
+        transactions = block['transactions']
+        aablock_accounts = self.check_aablock_balance()
+
         if aablock_accounts:
             for to_address in aablock_accounts:
-                payment_obj = Payment.get(address=to_address)
+                payment_obj = Payment.get(avax_address=to_address)
                 value = aablock_accounts[to_address]
                 if payment_obj.pending:
                     if datetime.datetime.now() >= payment_obj.start_time + datetime.timedelta(hours=3, minutes=30):

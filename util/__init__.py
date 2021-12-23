@@ -3,7 +3,6 @@ import os
 import time
 import json
 from web3 import Web3
-from web3.eth import AsyncEth
 from util.price_aablock import get_price_aablock
 
 min_payment_amount_tier1 = float(os.environ.get('PAYMENT_AMOUNT_TIER1', 35))
@@ -31,7 +30,7 @@ AVAX_HOST_TYPE = os.environ.get('AVAX_HOST_TYPE','')
 
 
 if ETH_HOST_TYPE in ['http','https']:
-    w3_conn = Web3(Web3.HTTPProvider(f'{ETH_HOST_TYPE}://{ETH_HOST}:{ETH_PORT}'), modules={'eth': (AsyncEth,)}, middlewares=[])
+    w3_conn = Web3(Web3.HTTPProvider(f'{ETH_HOST_TYPE}://{ETH_HOST}:{ETH_PORT}'))
 elif ETH_HOST_TYPE in ['ws','wss']:
     w3_conn = Web3(Web3.WebsocketProvider(f'{ETH_HOST_TYPE}://{ETH_HOST}:{ETH_PORT}'))
 
@@ -39,7 +38,7 @@ with open("util/uniswap_router_abi.json", 'r') as file:
     UniswapRouterABI = json.load(file)
 
 
-async def get_price(address1, address2):
+def get_price(address1, address2):
     router = w3_conn.eth.contract(address=UniswapRouterABI['contractAddress'], abi=UniswapRouterABI['abi'])
     token = w3_conn.toWei(1, 'Ether')
 
@@ -48,13 +47,13 @@ async def get_price(address1, address2):
     return price
 
 
-async def get_eth_amount(amount):
+def get_eth_amount(amount):
     global eth_price
     global last_amount_update_time_eth
 
     try:
         if last_amount_update_time_eth is None or (int(time.time()) - 60) > last_amount_update_time_eth:
-            eth_price = await get_price(WETH,USDT)/(10**4)
+            eth_price = get_price(WETH,USDT)/(10**4)
             last_amount_update_time_eth = int(time.time())
     except Exception as e:
         logging.critical('Geth eth price lookup failed with error:', exc_info=True)
@@ -66,13 +65,13 @@ async def get_eth_amount(amount):
     return float('{:.6f}'.format(amount / eth_price))
 
 
-async def get_ablock_amount(amount):
+def get_ablock_amount(amount):
     global ablock_price
     global last_amount_update_time_ablock
 
     try:
         if last_amount_update_time_ablock is None or (int(time.time()) - 60) > last_amount_update_time_ablock:
-            ablock_price = await get_price(aBlock, USDT)
+            ablock_price = get_price(aBlock, USDT)
             last_amount_update_time_ablock = int(time.time())
     except Exception as e:
         logging.critical('Uniswap ablock price lookup failed with error:',exc_info=True)
@@ -84,14 +83,14 @@ async def get_ablock_amount(amount):
     return float('{:.6f}'.format(amount / ablock_price))
 
 
-async def get_aablock_amount(amount):
+def get_aablock_amount(amount):
     global aablock_price
     global last_amount_update_time_aablock
 
 
     try:
         if last_amount_update_time_aablock is None or (int(time.time()) - 60) > last_amount_update_time_aablock:
-            aablock_price = await get_price_aablock()
+            aablock_price = get_price_aablock()
             last_amount_update_time_aablock = int(time.time())
     except Exception as e:
         logging.critical('Pangolin aablock price lookup failed with error:', exc_info=True)

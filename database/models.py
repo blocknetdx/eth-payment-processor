@@ -18,11 +18,12 @@ class Project(db.Entity):
 
 
 class Payment(db.Entity):
-    pending = Required(bool)
-    address = Required(str)
+    pending = Optional(bool)
+    eth_address = Optional(str)
+    avax_address = Optional(str)
 
-    tier1_expected_amount = Required(float)
-    tier2_expected_amount = Required(float)
+    tier1_expected_amount = Optional(float)
+    tier2_expected_amount = Optional(float)
     tier1_expected_amount_ablock = Optional(float)
     tier2_expected_amount_ablock = Optional(float)
     tier1_expected_amount_aablock = Optional(float)
