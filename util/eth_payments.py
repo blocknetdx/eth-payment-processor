@@ -155,7 +155,7 @@ class Web3Helper:
 
     def check_ablock_balance(self):
         paid = {}
-        for contract_address in self.accounts:
+        for contract_address in self.eth_accounts:
             balance_contract = self.contract_ablock.functions.balanceOf(contract_address).call()
             payment_obj = Payment.get(address=contract_address)
             amount_ablock = balance_contract - Web3.toWei(payment_obj.amount_ablock, 'ether')
