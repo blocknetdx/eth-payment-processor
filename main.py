@@ -1,5 +1,6 @@
 import logging
 import os
+import json
 import sys
 import time
 import uuid
@@ -110,16 +111,16 @@ def create_project():
 
             payment = Payment(
                 pending=True,
-                eth_address=eth_address,
-                avax_address=avax_address,
+                eth_address=eth_address if eth_address!=None else '',
+                avax_address=avax_address if avax_address!=None else '',
                 start_time=start_time,
                 project=project,
-                tier1_expected_amount=tier1_expected_amount,
-                tier2_expected_amount=tier2_expected_amount,
-                tier1_expected_amount_ablock=tier1_expected_amount_ablock,
-                tier2_expected_amount_ablock=tier2_expected_amount_ablock,
-                tier1_expected_amount_aablock=tier1_expected_amount_aablock,
-                tier2_expected_amount_aablock=tier2_expected_amount_aablock,
+                tier1_expected_amount=tier1_expected_amount if tier1_expected_amount!=None else '',
+                tier2_expected_amount=tier2_expected_amount if tier2_expected_amount!=None else '',
+                tier1_expected_amount_ablock=tier1_expected_amount_ablock if tier1_expected_amount_ablock!=None else '',
+                tier2_expected_amount_ablock=tier2_expected_amount_ablock if tier2_expected_amount_ablock!=None else '',
+                tier1_expected_amount_aablock=tier1_expected_amount_aablock if tier1_expected_amount_aablock!=None else '',
+                tier2_expected_amount_aablock=tier2_expected_amount_aablock if tier2_expected_amount_aablock!=None else '',
                 amount_aablock=0,
                 amount_ablock=0
             )
