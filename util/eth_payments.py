@@ -89,7 +89,7 @@ class Web3Helper:
                         self.fetch_eth_accounts()
                     self.handle_eth_events(events)
                 except Exception as e:
-                    logging.critical('error handling eth event {}', exc_info=True)
+                    logging.critical('error handling eth event', exc_info=True)
                 time.sleep(1)
 
     def avax_start(self):
@@ -102,7 +102,7 @@ class Web3Helper:
                         self.fetch_avax_accounts()
                     self.handle_avax_events(events)
                 except Exception as e:
-                    logging.critical('error handling avax event {}', exc_info=True)
+                    logging.critical('error handling avax event', exc_info=True)
                 time.sleep(1)
 
     @db_session
