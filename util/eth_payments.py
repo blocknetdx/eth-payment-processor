@@ -89,7 +89,7 @@ class Web3Helper:
                         self.fetch_eth_accounts()
                     self.handle_eth_events(events)
                 except Exception as e:
-                    logging.error('error handling eth event {}'.format(e))
+                    logging.critical('error handling eth event {}', exc_info=True)
                 time.sleep(1)
 
     def avax_start(self):
@@ -102,7 +102,7 @@ class Web3Helper:
                         self.fetch_avax_accounts()
                     self.handle_avax_events(events)
                 except Exception as e:
-                    logging.error('error handling avax event {}'.format(e))
+                    logging.critical('error handling avax event {}', exc_info=True)
                 time.sleep(1)
 
     @db_session
@@ -123,14 +123,14 @@ class Web3Helper:
         try:
             return self.w3_accounts.geth.personal.new_account('')
         except Exception as e:
-            logging.error(e)
+            logging.critical("get eth address exception", exc_info=True)
             return None
 
     def get_avax_address(self):
         try:
             return self.w3_avax.geth.personal.new_account('')
         except Exception as e:
-            logging.error(e)
+            logging.critical("get avax address exception", exc_info=True)
             return None
 
     @db_session
