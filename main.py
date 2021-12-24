@@ -6,7 +6,7 @@ import uuid
 import secrets
 import datetime
 from threading import Thread
-from flask import Flask, requests, Response, g, jsonify
+from flask import Flask, request, Response, g, jsonify
 from database.models import commit, db_session, select, Project, Payment
 from util.eth_payments import Web3Helper
 from util import get_eth_amount, get_ablock_amount, get_aablock_amount, \
