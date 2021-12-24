@@ -56,7 +56,7 @@ class FlaskWithStartUp(Flask):
     def run(self, host=None, port=None, debug=None, load_dotenv=True, **options):
         with self.app_context():
             on_startup()
-        super(MyFlaskApp, self).run(host=host, port=port, debug=debug, load_dotenv=load_dotenv, **options)
+        super(FlaskWithStartUp, self).run(host=host, port=port, debug=debug, load_dotenv=load_dotenv, **options)
 
 
 
