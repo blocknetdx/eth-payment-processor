@@ -144,7 +144,8 @@ def create_project():
         'result': {
             'project_id': project_name,
             'api_key': api_key,
-            'payment_address': eth_address,
+            'payment_eth_address': eth_address,
+            'payment_avax_address': avax_address,
             'payment_amount_tier1': tier1_expected_amount,
             'payment_amount_tier2': tier2_expected_amount,
             'payment_amount_tier1_ablock': tier1_expected_amount_ablock,
