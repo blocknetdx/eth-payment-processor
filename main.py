@@ -86,7 +86,7 @@ def create_project():
     }
     if list(amounts.values()).count(None)>=5:
         context = {
-            'error': f'Internal Server Error: Failed to get at least 2 amounts, please try again',
+            'error': 'Internal Server Error: Failed to get at least 2 amounts, please try again',
             'amounts':amounts
         }
         return Response(response=json.dumps(context))
@@ -100,10 +100,13 @@ def create_project():
 
     logging.info(f'Creating project {project_name} with payment amounts: tier1 {tier1_expected_amount} '
                  f'tier2 {tier1_expected_amount}')
-    error = 0 if tier1_expected_amount is not None and tier2_expected_amount is not None else -1099
+
     try:
         if eth_address is None and avax_address is None:
-            raise Exception
+            context = {
+                'error': 'Internal Server Error: Failed to get at least 1 payment address, please try again'
+            }
+            return Response(response=json.dumps(context))
 
         with db_session:
             project = Project(
@@ -135,7 +138,7 @@ def create_project():
         logging.error(e)
         error = -9091
 
-    if eth_address is None or error != 0:
+    if error != 0:
         error = -1000
 
         context = {
