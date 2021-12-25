@@ -173,10 +173,10 @@ class Web3Helper:
         return paid
 
     def handle_eth_event(self, event):
-        block_hash = Web3.toHex(event)
-        if not block_hash:
+        block_number = event['blockNumber']
+        if not block_number:
             return
-        block = self.w3.eth.getBlock(block_hash, full_transactions=True)
+        block = self.w3.eth.get_block(block_number, full_transactions=True)
         if 'transactions' not in block:
             logging.warning('no transactions in eth block {}'.format(block_hash))
             return
@@ -299,10 +299,10 @@ class Web3Helper:
                 payment_obj.project.expires = datetime.datetime.now() + datetime.timedelta(days=30)
 
     def handle_avax_event(self, event):
-        block_hash = Web3.toHex(event)
-        if not block_hash:
+        block_number = event['blockNumber']
+        if not block_number:
             return
-        block = self.w3_avax.eth.getBlock(block_hash, full_transactions=True)
+        block = self.w3_avax.eth.get_block(block_number, full_transactions=True)
         if 'transactions' not in block:
             logging.warning('no transactions in avax block {}'.format(block_hash))
             return
