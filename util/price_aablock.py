@@ -1,4 +1,5 @@
 from web3 import Web3
+from web3.middleware import geth_poa_middleware
 import json
 import os
 
@@ -13,9 +14,11 @@ AVAX_HOST_TYPE = os.environ.get('AVAX_HOST_TYPE','')
 
 if AVAX_HOST_TYPE in ['http','https']:
     provider_avax = Web3(Web3.HTTPProvider(f'{AVAX_HOST_TYPE}://{AVAX_HOST}:{AVAX_PORT}/ext/bc/C/rpc'))
+    provider_avax.middleware_onion.inject(geth_poa_middleware, layer=0)
 elif AVAX_HOST_TYPE in ['ws','wss']:
     provider_avax = Web3(Web3.WebsocketProvider(f'{AVAX_HOST_TYPE}://{AVAX_HOST}:{AVAX_PORT}/ext/bc/C/rpc'))
-
+    provider_avax.middleware_onion.inject(geth_poa_middleware, layer=0)
+    
 usdtContract_address = '0x9ee0a4e21bd333a6bb2ab298194320b8daa26516'
 aablockContract_address = '0xfFc53c9d889B4C0bfC1ba7B9E253C615300d9fFD'
 

@@ -5,6 +5,7 @@ import json
 import datetime
 
 from web3 import Web3
+from web3.middleware import geth_poa_middleware
 from database.models import Payment, db_session
 from util import get_eth_amount, get_ablock_amount, get_aablock_amount, min_payment_amount_tier1, \
                  min_payment_amount_tier2, discount_ablock, discount_aablock
@@ -61,17 +62,23 @@ class Web3Helper:
         if self.AVAX_HOST_TYPE in ['http', 'https'] and self.AVAX_HOST!='':
             self.w3_avax = Web3(Web3.HTTPProvider(f'{self.AVAX_HOST_TYPE}://{self.AVAX_HOST}:{self.AVAX_PORT}/ext/bc/C/rpc'))
             self.w3_avax_accounts = Web3(Web3.HTTPProvider(f'{self.AVAX_HOST_TYPE}://{self.AVAX_HOST}:{self.AVAX_PORT}/ext/bc/C/rpc'))
+            self.w3_avax.middleware_onion.inject(geth_poa_middleware, layer=0)
+            self.w3_avax_accounts.middleware_onion.inject(geth_poa_middleware, layer=0)
         elif self.AVAX_HOST_TYPE in ['ws', 'wss'] and self.AVAX_HOST!='':
             self.w3_avax = Web3(Web3.WebsocketProvider(f'{self.AVAX_HOST_TYPE}://{self.AVAX_HOST}:{self.AVAX_PORT}/ext/bc/C/rpc'))
             self.w3_avax_accounts = Web3(Web3.WebsocketProvider(f'{self.AVAX_HOST_TYPE}://{self.AVAX_HOST}:{Aself.VAX_PORT}/ext/bc/C/rpc'))
-
+            self.w3_avax.middleware_onion.inject(geth_poa_middleware, layer=0)
+            self.w3_avax_accounts.middleware_onion.inject(geth_poa_middleware, layer=0)
         if self.ETH_HOST_TYPE in ['http','https'] and self.ETH_HOST!='':
             self.w3 = Web3(Web3.HTTPProvider(f'{self.ETH_HOST_TYPE}://{self.ETH_HOST}:{self.ETH_PORT}'))
             self.w3_accounts = Web3(Web3.HTTPProvider(f'{self.ETH_HOST_TYPE}://{self.ETH_HOST}:{self.ETH_PORT}'))
+            self.w3.middleware_onion.inject(geth_poa_middleware, layer=0)
+            self.w3_accounts.middleware_onion.inject(geth_poa_middleware, layer=0)
         elif self.ETH_HOST_TYPE in ['ws','wss'] and self.ETH_HOST!='':
             self.w3 = Web3(Web3.WebsocketProvider(f'{self.ETH_HOST_TYPE}://{self.ETH_HOST}:{self.ETH_PORT}'))
             self.w3_accounts = Web3(Web3.WebsocketProvider(f'{self.ETH_HOST_TYPE}://{self.ETH_HOST}:{self.ETH_PORT}'))
-
+            self.w3.middleware_onion.inject(geth_poa_middleware, layer=0)
+            self.w3_accounts.middleware_onion.inject(geth_poa_middleware, layer=0)
         if self.ETH_HOST_TYPE!='':
             self.contract_ablock = self.w3.eth.contract(address=ablock_contract_address, abi=abi)
         if self.AVAX_HOST_TYPE!='':
