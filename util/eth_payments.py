@@ -81,7 +81,8 @@ class Web3Helper:
 
     def eth_start(self):
         if self.ETH_HOST_TYPE!='':
-            latest = self.w3.eth.filter('latest')
+            # latest = self.w3.eth.filter('latest')
+            latest = self.w3.eth.filter({'toBlock': 'latest'})
             while True:
                 try:
                     events = latest.get_new_entries()
@@ -94,7 +95,8 @@ class Web3Helper:
 
     def avax_start(self):
         if self.AVAX_HOST_TYPE!='':
-            latest = self.w3_avax.eth.filter('latest')
+            # latest = self.w3_avax.eth.filter('latest')
+            latest = self.w3_avax.eth.filter({'toBlock': 'latest'})
             while True:
                 try:
                     events = latest.get_new_entries()
