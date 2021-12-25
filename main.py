@@ -98,8 +98,7 @@ def create_project():
     payment_expires = start_time + datetime.timedelta(hours=3, minutes=30)
     api_key = secrets.token_urlsafe(32)
 
-    logging.info(f'Creating project {project_name} with payment amounts: tier1 {tier1_expected_amount} '
-                 f'tier2 {tier1_expected_amount}')
+    logging.info(f'Creating project {project_name} with payment amounts: {amounts}')
 
     try:
         if eth_address is None and avax_address is None:
@@ -135,15 +134,10 @@ def create_project():
 
             commit()
     except Exception as e:
-        logging.error(e)
-        error = -9091
-
-    if error != 0:
-        error = -1000
-
-        context = {
-            'result': error,
-            'error': error
+        logging.critical('Exception while creating Project or Payment', exc_info=True)
+        
+        context = { 
+            'error': 'Exception while creating Project or Payment'
         }
 
         return Response(response=json.dumps(context))
