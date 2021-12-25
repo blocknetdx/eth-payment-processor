@@ -76,16 +76,32 @@ def create_project():
     tier1_expected_amount_aablock = get_aablock_amount(min_payment_amount_tier1 * discount_aablock)
     tier2_expected_amount_aablock = get_aablock_amount(min_payment_amount_tier2 * discount_aablock)
 
-    if not tier1_expected_amount or not tier2_expected_amount:
+    # if not tier1_expected_amount or not tier2_expected_amount:
+    #     context = {
+    #         'error': 'Internal Server Error: Failed to get ETH prices, please try again'
+    #     }
+    #     return Response(response=json.dumps(context))
+    # if not tier1_expected_amount_ablock or not tier2_expected_amount_ablock:
+    #     context = {
+    #         'error': 'Internal Server Error: Failed to get uniswap ablock prices, please try again'
+    #     }
+    #     return Response(response=json.dumps(context))
+
+    amounts = {
+    "eth_tier1":tier1_expected_amount,
+    "eth_tier2":tier2_expected_amount,
+    "ablock_tier1":tier1_expected_amount_ablock,
+    "ablock_tier2":tier2_expected_amount_ablock,
+    "aablock_tier1":tier1_expected_amount_aablock,
+    "aablock_tier2":tier2_expected_amount_aablock
+    }
+    if list(amounts.values()).count(None)>=2:
         context = {
-            'error': 'Internal Server Error: Failed to get ETH prices, please try again'
+            'error': f'Internal Server Error: Failed to get {list(amounts.values()).count(None)} amounts, please try again',
+            'amounts':amounts
         }
         return Response(response=json.dumps(context))
-    if not tier1_expected_amount_ablock or not tier2_expected_amount_ablock:
-        context = {
-            'error': 'Internal Server Error: Failed to get uniswap ablock prices, please try again'
-        }
-        return Response(response=json.dumps(context))
+
     eth_address = web3_helper.get_eth_address()
     avax_address = web3_helper.get_avax_address()
     project_name = str(uuid.uuid4())
