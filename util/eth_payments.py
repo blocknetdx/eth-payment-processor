@@ -178,9 +178,9 @@ class Web3Helper:
             return
         block = self.w3.eth.get_block(block_number, full_transactions=True)
         if 'transactions' not in block:
-            logging.warning('no transactions in eth block {}'.format(block_hash))
+            logging.warning('no transactions in eth block {}'.format(block_number))
             return
-        logging.info('processing eth block {}'.format(block_hash))
+        logging.info('processing eth block {}'.format(block_number))
         transactions = block['transactions']
         ablock_accounts = self.check_ablock_balance()
 
@@ -304,9 +304,9 @@ class Web3Helper:
             return
         block = self.w3_avax.eth.get_block(block_number, full_transactions=True)
         if 'transactions' not in block:
-            logging.warning('no transactions in avax block {}'.format(block_hash))
+            logging.warning('no transactions in avax block {}'.format(block_number))
             return
-        logging.info('processing avax block {}'.format(block_hash))
+        logging.info('processing avax block {}'.format(block_number))
         transactions = block['transactions']
         aablock_accounts = self.check_aablock_balance()
 
