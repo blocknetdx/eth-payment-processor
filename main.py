@@ -155,8 +155,7 @@ def create_project():
             'payment_amount_tier1_aablock': tier1_expected_amount_aablock,
             'payment_amount_tier2_aablock': tier2_expected_amount_aablock,
             'expiry_time': payment_expires.strftime("%Y-%m-%d %H:%M:%S EST")
-        },
-        'error': error
+        }
     }
 
     logging.info('Successfully created new pending project')
