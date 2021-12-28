@@ -100,6 +100,9 @@ def create_project():
 
     logging.info(f'Creating project {project_name} with payment amounts: {amounts}')
 
+    if tier1_expected_amount is None and tier2_expected_amount is None and tier1_expected_amount_ablock is None and tier2_expected_amount_ablock is None:
+        eth_address = None
+
     try:
         if eth_address is None and avax_address is None:
             context = {
