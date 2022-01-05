@@ -91,8 +91,8 @@ def create_project():
         }
         return Response(response=json.dumps(context))
 
-    eth_address = web3_helper.get_eth_address()
-    avax_address = web3_helper.get_avax_address()
+    eth_token, eth_address, eth_privkey = web3_helper.get_eth_address()
+    avax_token, avax_address, avax_privkey = web3_helper.get_avax_address()
     project_name = str(uuid.uuid4())
     start_time = datetime.datetime.now()
     payment_expires = start_time + datetime.timedelta(hours=3, minutes=30)
@@ -121,8 +121,12 @@ def create_project():
 
             payment = Payment(
                 pending=True,
+                eth_token=eth_token if eth_token!=None else '',
                 eth_address=eth_address if eth_address!=None else '',
+                eth_privkey=eth_privkey if eth_privkey!=None else '',
+                avax_token=avax_token if avax_token!=None else '',
                 avax_address=avax_address if avax_address!=None else '',
+                avax_privkey=avax_privkey if avax_privkey!=None else '',
                 start_time=start_time,
                 project=project,
                 tier1_expected_amount=tier1_expected_amount if tier1_expected_amount!=None else -1,

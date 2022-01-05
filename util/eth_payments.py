@@ -3,6 +3,7 @@ import os
 import time
 import json
 import datetime
+import secrets
 
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
@@ -130,17 +131,25 @@ class Web3Helper:
 
     def get_eth_address(self):
         try:
-            return self.w3_accounts.geth.personal.new_account('')
+            token = secrets.token_hex(32)
+            acc = self.w3_accounts.eth.account.create(token)
+            address = acc.address
+            privkey = acc.privateKey.hex()
+            return [token, address, privkey]
         except Exception as e:
             logging.critical("get eth address exception", exc_info=True)
-            return None
+            return [None, None, None]
 
     def get_avax_address(self):
         try:
-            return self.w3_avax.geth.personal.new_account('')
+            token = secrets.token_hex(32)
+            acc = self.w3_avax.eth.account.create(token)
+            address = acc.address
+            privkey = acc.privateKey.hex()
+            return [token, address, privkey]
         except Exception as e:
             logging.critical("get avax address exception", exc_info=True)
-            return None
+            return [None, None, None]
 
     @db_session
     def handle_eth_events(self, events):
