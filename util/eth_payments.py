@@ -89,7 +89,8 @@ class Web3Helper:
 
     def eth_start(self):
         if self.ETH_HOST_TYPE!='':
-            # latest = self.w3.eth.filter('latest')
+            LATEST_BLOCK = int(self.w3.eth.getBlock('latest').number)
+            CURRENT_BLOCK = LATEST_BLOCK
             latest = self.w3.eth.filter({'toBlock': 'latest'})
             while True:
                 try:
@@ -97,13 +98,27 @@ class Web3Helper:
                     if len(events) > 0:  # fetch latest account info
                         self.fetch_eth_accounts()
                     self.handle_eth_events(events)
+                    backward_filter = self.w3.eth.filter({
+                                'fromBlock': hex(int(CURRENT_BLOCK)-1),
+                                'toBlock': hex(int(CURRENT_BLOCK)),
+                            })
+                    events = backward_filter.get_all_entries()
+                    if len(events) > 0:  # fetch latest account info
+                        self.fetch_eth_accounts()
+                    self.handle_eth_events(events)
+                    if LATEST_BLOCK - CURRENT_BLOCK > 5000:
+                        LATEST_BLOCK = int(self.w3.eth.getBlock('latest').number)
+                        CURRENT_BLOCK = int(self.w3.eth.getBlock('latest').number)
+                    else:
+                        CURRENT_BLOCK = CURRENT_BLOCK - 2
                 except Exception as e:
                     logging.critical('error handling eth event', exc_info=True)
                 time.sleep(1)
 
     def avax_start(self):
         if self.AVAX_HOST_TYPE!='':
-            # latest = self.w3_avax.eth.filter('latest')
+            LATEST_BLOCK = int(self.w3_avax.eth.getBlock('latest').number)
+            CURRENT_BLOCK = LATEST_BLOCK
             latest = self.w3_avax.eth.filter({'toBlock': 'latest'})
             while True:
                 try:
@@ -111,6 +126,19 @@ class Web3Helper:
                     if len(events) > 0:  # fetch latest account info
                         self.fetch_avax_accounts()
                     self.handle_avax_events(events)
+                    backward_filter = self.w3_avax.eth.filter({
+                                'fromBlock': hex(int(CURRENT_BLOCK)-1),
+                                'toBlock': hex(int(CURRENT_BLOCK)),
+                            })
+                    events = backward_filter.get_all_entries()
+                    if len(events) > 0:  # fetch latest account info
+                        self.fetch_avax_accounts()
+                    self.handle_avax_events(events)
+                    if LATEST_BLOCK - CURRENT_BLOCK > 5000:
+                        LATEST_BLOCK = int(self.w3_avax.eth.getBlock('latest').number)
+                        CURRENT_BLOCK = int(self.w3_avax.eth.getBlock('latest').number)
+                    else:
+                        CURRENT_BLOCK = CURRENT_BLOCK - 2
                 except Exception as e:
                     logging.critical('error handling avax event', exc_info=True)
                 time.sleep(1)
@@ -180,7 +208,7 @@ class Web3Helper:
             if amount_ablock > 0:
                 paid[contract_address] = amount_ablock
         return paid
-
+    
     def handle_eth_event(self, event):
         block_number = event['blockNumber']
         if not block_number:
