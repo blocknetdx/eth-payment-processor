@@ -105,6 +105,7 @@ class Web3Helper:
                         self.fetch_eth_accounts()
                     self.handle_eth_events(events)
                 except Exception as e:
+                    latest = self.w3.eth.filter({'toBlock': 'latest'})
                     logging.critical('error handling eth event', exc_info=True)
                 time.sleep(1)
 
@@ -118,6 +119,7 @@ class Web3Helper:
                         self.fetch_avax_accounts()
                     self.handle_avax_events(events)
                 except Exception as e:
+                    latest = self.w3_avax.eth.filter({'toBlock': 'latest'})
                     logging.critical('error handling avax event', exc_info=True)
                 time.sleep(1)
 
@@ -136,7 +138,7 @@ class Web3Helper:
                         self.fetch_eth_accounts()
                     self.handle_eth_events(events)
                     if LATEST_BLOCK - CURRENT_BLOCK >= 10000:
-                        CURRENT_BLOCK = LATEST_BLOCK + 10000
+                        CURRENT_BLOCK = LATEST_BLOCK + 5000
                     else:
                         CURRENT_BLOCK = CURRENT_BLOCK-2
                 except Exception as e:
@@ -158,7 +160,7 @@ class Web3Helper:
                         self.fetch_avax_accounts()
                     self.handle_avax_events(events)
                     if LATEST_BLOCK - CURRENT_BLOCK >= 10000:
-                        CURRENT_BLOCK = LATEST_BLOCK + 10000
+                        CURRENT_BLOCK = LATEST_BLOCK + 5000
                     else:
                         CURRENT_BLOCK = CURRENT_BLOCK-2
                 except Exception as e:
