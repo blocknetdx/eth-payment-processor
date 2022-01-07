@@ -123,7 +123,7 @@ class Web3Helper:
                                 'fromBlock': hex(int(CURRENT_BLOCK)-1),
                                 'toBlock': hex(int(CURRENT_BLOCK)),
                             })
-                    events = latest.get_all_entries()
+                    events = backward_filter.get_all_entries()
                     if len(events) > 0:  # fetch latest account info
                         self.fetch_eth_accounts()
                     self.handle_eth_events(events)
@@ -145,7 +145,7 @@ class Web3Helper:
                                 'fromBlock': hex(int(CURRENT_BLOCK)-1),
                                 'toBlock': hex(int(CURRENT_BLOCK)),
                             })
-                    events = latest.get_all_entries()
+                    events = backward_filter.get_all_entries()
                     if len(events) > 0:  # fetch latest account info
                         self.fetch_avax_accounts()
                     self.handle_avax_events(events)
