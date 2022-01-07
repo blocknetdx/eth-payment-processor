@@ -52,7 +52,7 @@ def on_startup():
     t2.start()
     t3 = Thread(target=web3_helper.eth_start_back, daemon=True)
     t3.start()
-    t4 = Thread(target=web3_helper.avax_star_back, daemon=True)
+    t4 = Thread(target=web3_helper.avax_start_back, daemon=True)
     t4.start()
     t5 = Thread(target=update_api_counts, daemon=True)
     t5.start()
