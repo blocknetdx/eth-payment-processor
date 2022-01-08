@@ -27,6 +27,7 @@ def calc_api_calls_tiers(payment_amount_wei, tier1_eth_amount_wei, tier2_eth_amo
     api calls. [price multiplier] = [user payment in eth] / [tier required payment in eth]"""
     tier_expected_amount = tier1_eth_amount_wei if not archival_mode else tier2_eth_amount_wei
     multiplier = float(payment_amount_wei) / float(tier_expected_amount)
+    logging.info(f"Multiplier {multiplier}")
     api_calls = int(float(def_api_calls_count) * multiplier)
     return api_calls
 
@@ -167,14 +168,14 @@ class Web3Helper:
                     logging.critical('error handling avax back event', exc_info=True)
                 time.sleep(1)
 
-    @db_session
+    @db_session(optimistic=False)
     def fetch_eth_accounts(self):
         query = Payment.select(lambda payment: payment.start_time is not None and payment.eth_address is not None)
         accounts = [payment.eth_address for payment in query]
         if len(accounts) > 0:
             self.eth_accounts = accounts
 
-    @db_session
+    @db_session(optimistic=False)
     def fetch_avax_accounts(self):
         query = Payment.select(lambda payment: payment.start_time is not None and payment.avax_address is not None)
         accounts = [payment.avax_address for payment in query]
@@ -203,12 +204,12 @@ class Web3Helper:
             logging.critical("get avax address exception", exc_info=True)
             return [None, None, None]
 
-    @db_session
+    @db_session(optimistic=False)
     def handle_eth_events(self, events):
         for event in events:
             self.handle_eth_event(event)
 
-    @db_session
+    @db_session(optimistic=False)
     def handle_avax_events(self, events):
         for event in events:
             self.handle_avax_event(event)
@@ -218,7 +219,7 @@ class Web3Helper:
         for contract_address in self.avax_accounts:
             balance_contract = self.contract_aablock.functions.balanceOf(Web3.toChecksumAddress(contract_address)).call()
             payment_obj = Payment.get(avax_address=contract_address)
-            amount_aablock = balance_contract - Web3.toWei(payment_obj.amount_aablock, 'ether')
+            amount_aablock = balance_contract*10**10 - Web3.toWei(payment_obj.amount_aablock, 'ether')
             if amount_aablock > 0:
                 paid[contract_address] = amount_aablock
         return paid
@@ -228,7 +229,7 @@ class Web3Helper:
         for contract_address in self.eth_accounts:
             balance_contract = self.contract_ablock.functions.balanceOf(contract_address).call()
             payment_obj = Payment.get(eth_address=contract_address)
-            amount_ablock = balance_contract - Web3.toWei(payment_obj.amount_ablock, 'ether')
+            amount_ablock = balance_contract*10**10 - Web3.toWei(payment_obj.amount_ablock, 'ether')
             if amount_ablock > 0:
                 paid[contract_address] = amount_ablock
         return paid
