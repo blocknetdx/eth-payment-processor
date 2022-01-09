@@ -353,9 +353,9 @@ class Web3Helper:
                     payment_obj.project.active = True
 
                 if not payment_obj.amount:
-                    payment_obj.amount_ablock = float(value)
+                    payment_obj.amount_ablock = float(value)/(10**8)
                 else:
-                    payment_obj.amount_ablock += float(value)
+                    payment_obj.amount_ablock += float(value)/(10**8)
 
                 payment_obj.project.expires = datetime.datetime.now() + datetime.timedelta(days=30)
 
@@ -401,8 +401,8 @@ class Web3Helper:
                     payment_obj.project.active = True
 
                 if not payment_obj.amount:
-                    payment_obj.amount_aablock = float(value)
+                    payment_obj.amount_aablock = float(value)/(10**8)
                 else:
-                    payment_obj.amount_aablock += float(value)
+                    payment_obj.amount_aablock += float(value)/(10**8)
 
                 payment_obj.project.expires = datetime.datetime.now() + datetime.timedelta(days=30)
