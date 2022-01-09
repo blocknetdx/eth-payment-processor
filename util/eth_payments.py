@@ -330,20 +330,19 @@ class Web3Helper:
                 if payment_obj.pending:
                     if datetime.datetime.now() >= payment_obj.start_time + datetime.timedelta(hours=12):
                         tier2_expected_amount_ablock = get_ablock_amount(min_payment_amount_tier2 * discount)
-                        payment_obj.project.archive_mode = value >= Web3.toWei(tier2_expected_amount_ablock, 'ether')
-                        payment_obj.project.api_token_count = calc_api_calls(value, 'ablock',
+                        payment_obj.project.archive_mode = value >= (tier2_expected_amount_ablock - tier1_expected_amount_ablock)
+                        payment_obj.project.api_token_count = calc_api_calls(Web3.toWei(value, 'ether'), 'ablock',
                                                                              payment_obj.project.archive_mode,
                                                                              default_api_calls_count)
                     else:
-                        payment_obj.project.archive_mode = value >= Web3.toWei(payment_obj.tier2_expected_amount_ablock,
-                                                                               'ether')
-                        payment_obj.project.api_token_count = calc_api_calls_tiers(value,
+                        payment_obj.project.archive_mode = value >= (tier2_expected_amount_ablock - tier1_expected_amount_ablock)
+                        payment_obj.project.api_token_count = calc_api_calls_tiers(Web3.toWei(value, 'ether'),
                                                                                    Web3.toWei(payment_obj.tier1_expected_amount_ablock,'ether'),
                                                                                    Web3.toWei(payment_obj.tier2_expected_amount_ablock,'ether'),
                                                                                    payment_obj.project.archive_mode,
                                                                                    default_api_calls_count)
                 else:
-                    payment_obj.project.api_token_count += calc_api_calls(value, 'ablock',
+                    payment_obj.project.api_token_count += calc_api_calls(Web3.toWei(value, 'ether'), 'ablock',
                                                                           payment_obj.project.archive_mode,
                                                                           default_api_calls_count)
 
@@ -354,9 +353,9 @@ class Web3Helper:
                     payment_obj.project.active = True
 
                 if not payment_obj.amount:
-                    payment_obj.amount_ablock = float(Web3.fromWei(value, 'ether'))
+                    payment_obj.amount_ablock = float(value)
                 else:
-                    payment_obj.amount_ablock += float(Web3.fromWei(value, 'ether'))
+                    payment_obj.amount_ablock += float(value)
 
                 payment_obj.project.expires = datetime.datetime.now() + datetime.timedelta(days=30)
 
@@ -379,20 +378,19 @@ class Web3Helper:
                 if payment_obj.pending:
                     if datetime.datetime.now() >= payment_obj.start_time + datetime.timedelta(hours=12):
                         tier2_expected_amount_aablock = get_aablock_amount(min_payment_amount_tier2 * discount_aablock)
-                        payment_obj.project.archive_mode = value >= Web3.toWei(tier2_expected_amount_aablock, 'ether')
-                        payment_obj.project.api_token_count = calc_api_calls(value, 'aablock',
+                        payment_obj.project.archive_mode = value >= (tier2_expected_amount_aablock - tier1_expected_amount_aablock)
+                        payment_obj.project.api_token_count = calc_api_calls(Web3.toWei(value, 'ether'), 'aablock',
                                                                              payment_obj.project.archive_mode,
                                                                              default_api_calls_count)
                     else:
-                        payment_obj.project.archive_mode = value >= Web3.toWei(payment_obj.tier2_expected_amount_aablock,
-                                                                               'ether')
-                        payment_obj.project.api_token_count = calc_api_calls_tiers(value,
+                        payment_obj.project.archive_mode = value >= (tier2_expected_amount_aablock - tier1_expected_amount_aablock)
+                        payment_obj.project.api_token_count = calc_api_calls_tiers(Web3.toWei(value, 'ether'),
                                                                                    Web3.toWei(payment_obj.tier1_expected_amount_aablock,'ether'),
                                                                                    Web3.toWei(payment_obj.tier2_expected_amount_aablock,'ether'),
                                                                                    payment_obj.project.archive_mode,
                                                                                    default_api_calls_count)
                 else:
-                    payment_obj.project.api_token_count += calc_api_calls(value, 'aablock',
+                    payment_obj.project.api_token_count += calc_api_calls(Web3.toWei(value, 'ether'), 'aablock',
                                                                           payment_obj.project.archive_mode,
                                                                           default_api_calls_count)
 
@@ -403,8 +401,8 @@ class Web3Helper:
                     payment_obj.project.active = True
 
                 if not payment_obj.amount:
-                    payment_obj.amount_aablock = float(Web3.fromWei(value, 'ether'))
+                    payment_obj.amount_aablock = float(value)
                 else:
-                    payment_obj.amount_aablock += float(Web3.fromWei(value, 'ether'))
+                    payment_obj.amount_aablock += float(value)
 
                 payment_obj.project.expires = datetime.datetime.now() + datetime.timedelta(days=30)
