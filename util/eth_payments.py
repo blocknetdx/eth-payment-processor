@@ -333,18 +333,18 @@ class Web3Helper:
                         payment_obj.project.archive_mode = value >= (tier2_expected_amount_ablock - tier1_expected_amount_ablock)
                         payment_obj.project.api_token_count = calc_api_calls(Web3.toWei(value, 'ether'), 'ablock',
                                                                              payment_obj.project.archive_mode,
-                                                                             default_api_calls_count)
+                                                                             default_api_calls_count)//(10**8)
                     else:
                         payment_obj.project.archive_mode = value >= (tier2_expected_amount_ablock - tier1_expected_amount_ablock)
                         payment_obj.project.api_token_count = calc_api_calls_tiers(Web3.toWei(value, 'ether'),
                                                                                    Web3.toWei(payment_obj.tier1_expected_amount_ablock,'ether'),
                                                                                    Web3.toWei(payment_obj.tier2_expected_amount_ablock,'ether'),
                                                                                    payment_obj.project.archive_mode,
-                                                                                   default_api_calls_count)
+                                                                                   default_api_calls_count)//(10**8)
                 else:
                     payment_obj.project.api_token_count += calc_api_calls(Web3.toWei(value, 'ether'), 'ablock',
                                                                           payment_obj.project.archive_mode,
-                                                                          default_api_calls_count)
+                                                                          default_api_calls_count)//(10**8)
 
                 payment_obj.pending = False
 
@@ -381,18 +381,18 @@ class Web3Helper:
                         payment_obj.project.archive_mode = value >= (tier2_expected_amount_aablock - tier1_expected_amount_aablock)
                         payment_obj.project.api_token_count = calc_api_calls(Web3.toWei(value, 'ether'), 'aablock',
                                                                              payment_obj.project.archive_mode,
-                                                                             default_api_calls_count)
+                                                                             default_api_calls_count)//(10**8)
                     else:
                         payment_obj.project.archive_mode = value >= (tier2_expected_amount_aablock - tier1_expected_amount_aablock)
                         payment_obj.project.api_token_count = calc_api_calls_tiers(Web3.toWei(value, 'ether'),
                                                                                    Web3.toWei(payment_obj.tier1_expected_amount_aablock,'ether'),
                                                                                    Web3.toWei(payment_obj.tier2_expected_amount_aablock,'ether'),
                                                                                    payment_obj.project.archive_mode,
-                                                                                   default_api_calls_count)
+                                                                                   default_api_calls_count)//(10**8)
                 else:
                     payment_obj.project.api_token_count += calc_api_calls(Web3.toWei(value, 'ether'), 'aablock',
                                                                           payment_obj.project.archive_mode,
-                                                                          default_api_calls_count)
+                                                                          default_api_calls_count)//(10**8)
 
                 payment_obj.pending = False
 
