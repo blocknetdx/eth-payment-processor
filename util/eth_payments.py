@@ -219,7 +219,7 @@ class Web3Helper:
         for contract_address in self.avax_accounts:
             balance_contract = self.contract_aablock.functions.balanceOf(Web3.toChecksumAddress(contract_address)).call()
             payment_obj = Payment.get(avax_address=contract_address)
-            amount_aablock = Web3.fromWei(balance_contract*10**10) - payment_obj.amount_aablock
+            amount_aablock = Web3.fromWei(balance_contract*10**10, 'ether') - payment_obj.amount_aablock
             if amount_aablock > 0:
                 paid[contract_address] = amount_aablock
         return paid
@@ -229,7 +229,7 @@ class Web3Helper:
         for contract_address in self.eth_accounts:
             balance_contract = self.contract_ablock.functions.balanceOf(contract_address).call()
             payment_obj = Payment.get(eth_address=contract_address)
-            amount_ablock = Web3.fromWei(balance_contract*10**10) - payment_obj.amount_ablock
+            amount_ablock = Web3.fromWei(balance_contract*10**10, 'ether') - payment_obj.amount_ablock
             if amount_ablock > 0:
                 paid[contract_address] = amount_ablock
         return paid
