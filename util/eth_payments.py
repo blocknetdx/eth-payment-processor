@@ -331,14 +331,14 @@ class Web3Helper:
                     if datetime.datetime.now() >= payment_obj.start_time + datetime.timedelta(hours=12):
                         tier2_expected_amount_ablock = payment_obj.tier2_expected_amount_ablock
                         tier1_expected_amount_ablock = payment_obj.tier1_expected_amount_ablock
-                        payment_obj.project.archive_mode = value >= (tier2_expected_amount_ablock - tier1_expected_amount_ablock)
+                        payment_obj.project.archive_mode = value >= tier2_expected_amount_ablock
                         payment_obj.project.api_token_count = calc_api_calls(value, 'ablock',
                                                                              payment_obj.project.archive_mode,
                                                                              default_api_calls_count)
                     else:
                         tier2_expected_amount_ablock = payment_obj.tier2_expected_amount_ablock
                         tier1_expected_amount_ablock = payment_obj.tier1_expected_amount_ablock
-                        payment_obj.project.archive_mode = value >= (tier2_expected_amount_ablock - tier1_expected_amount_ablock)
+                        payment_obj.project.archive_mode = value >= tier2_expected_amount_ablock
                         payment_obj.project.api_token_count = calc_api_calls_tiers(value,
                                                                                    payment_obj.tier1_expected_amount_ablock,
                                                                                    payment_obj.tier2_expected_amount_ablock,
@@ -382,14 +382,14 @@ class Web3Helper:
                     if datetime.datetime.now() >= payment_obj.start_time + datetime.timedelta(hours=12):
                         tier2_expected_amount_aablock = payment_obj.tier2_expected_amount_aablock
                         tier1_expected_amount_aablock = payment_obj.tier1_expected_amount_aablock
-                        payment_obj.project.archive_mode = value >= (tier2_expected_amount_aablock - tier1_expected_amount_aablock)
+                        payment_obj.project.archive_mode = value >= tier2_expected_amount_aablock
                         payment_obj.project.api_token_count = calc_api_calls(value, 'aablock',
                                                                              payment_obj.project.archive_mode,
                                                                              default_api_calls_count)
                     else:
                         tier2_expected_amount_aablock = payment_obj.tier2_expected_amount_aablock
                         tier1_expected_amount_aablock = payment_obj.tier1_expected_amount_aablock
-                        payment_obj.project.archive_mode = value >= (tier2_expected_amount_aablock - tier1_expected_amount_aablock)
+                        payment_obj.project.archive_mode = value >= tier2_expected_amount_aablock
                         payment_obj.project.api_token_count = calc_api_calls_tiers(value,
                                                                                    payment_obj.tier1_expected_amount_aablock,
                                                                                    payment_obj.tier2_expected_amount_aablock,
