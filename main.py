@@ -202,7 +202,6 @@ def list_projects():
 @app.route("/<project_id>/api_count", methods=['POST'])
 def api_count_handler(project_id):
     global api_count_cache
-    project_id = request.form['project_id']
     if project_id:
         if project_id in api_count_cache:
             api_count_cache[project_id] += 1
