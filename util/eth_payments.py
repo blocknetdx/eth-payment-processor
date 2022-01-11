@@ -284,21 +284,21 @@ class Web3Helper:
                         tier2_expected_amount = get_eth_amount(min_payment_amount_tier2)
                         payment_obj.project.archive_mode = value >= Web3.toWei(tier2_expected_amount, 'ether')
                         # Note set the api calls here since first time payment (do not append)
-                        payment_obj.project.api_token_count = calc_api_calls(value, 'eth',
+                        payment_obj.project.api_token_count = calc_api_calls(Web3.fromWei(value,'ether'), 'eth',
                                                                              payment_obj.project.archive_mode,
                                                                              default_api_calls_count)
                     else:
                         # Non-expired payment calcs should use the db payment tiers
                         payment_obj.project.archive_mode = value >= Web3.toWei(payment_obj.tier2_expected_amount, 'ether')
                         # Note set the api calls here since first time payment (do not append)
-                        payment_obj.project.api_token_count = calc_api_calls_tiers(value,
-                                                                                   Web3.toWei(payment_obj.tier1_expected_amount,'ether'),
-                                                                                   Web3.toWei(payment_obj.tier2_expected_amount,'ether'),
+                        payment_obj.project.api_token_count = calc_api_calls_tiers(Web3.fromWei(value,'ether'),
+                                                                                   payment_obj.tier1_expected_amount,
+                                                                                   payment_obj.tier2_expected_amount,
                                                                                    payment_obj.project.archive_mode,
                                                                                    default_api_calls_count)
                 else:
                     # Append api calls because this is a top-up payment (first payment already received)
-                    payment_obj.project.api_token_count += calc_api_calls(value, 'eth',
+                    payment_obj.project.api_token_count += calc_api_calls(Web3.fromWei(value,'ether'), 'eth',
                                                                           payment_obj.project.archive_mode,
                                                                           default_api_calls_count)
 
