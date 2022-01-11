@@ -201,6 +201,17 @@ class Web3Helper:
             privkey = acc.privateKey.hex()
             return [token, address, privkey]
         except Exception as e:
+            logging.critical("get eth address exception", exc_info=True)
+            return [None, None, None]
+
+    def get_avax_address(self):
+        try:
+            token = secrets.token_hex(32)
+            acc = self.w3_avax.eth.account.create(token)
+            address = acc.address
+            privkey = acc.privateKey.hex()
+            return [token, address, privkey]
+        except Exception as e:
             logging.critical("get avax address exception", exc_info=True)
             return [None, None, None]
 
@@ -213,7 +224,7 @@ class Web3Helper:
     def handle_avax_events(self, events):
         for event in events:
             self.handle_avax_event(event)
-
+            
     def check_aablock_balance(self):
         paid = {}
         for contract_address in self.avax_accounts:
