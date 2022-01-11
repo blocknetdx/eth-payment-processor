@@ -301,6 +301,7 @@ class Web3Helper:
                     payment_obj.project.api_token_count += calc_api_calls(value, 'eth',
                                                                           payment_obj.project.archive_mode,
                                                                           default_api_calls_count)
+            
 
                 payment_obj.pending = False
 
