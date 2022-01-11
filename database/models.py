@@ -18,14 +18,25 @@ class Project(db.Entity):
 
 
 class Payment(db.Entity):
-    pending = Required(bool)
-    address = Required(str)
+    pending = Optional(bool)
+    eth_token = Optional(str)
+    eth_address = Optional(str)
+    eth_privkey = Optional(str)
+    avax_token = Optional(str)
+    avax_address = Optional(str)
+    avax_privkey = Optional(str)
 
-    tier1_expected_amount = Required(float)
-    tier2_expected_amount = Required(float)
+    tier1_expected_amount = Optional(float)
+    tier2_expected_amount = Optional(float)
+    tier1_expected_amount_ablock = Optional(float)
+    tier2_expected_amount_ablock = Optional(float)
+    tier1_expected_amount_aablock = Optional(float)
+    tier2_expected_amount_aablock = Optional(float)
 
     tx_hash = Optional(str)
     amount = Optional(float)
+    amount_ablock = Optional(float)
+    amount_aablock = Optional(float)
     start_time = Required(datetime)
 
     project = Required(Project, reverse='payments')

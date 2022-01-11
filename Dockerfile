@@ -1,5 +1,5 @@
 # docker build -t blocknetdx/eth-payment-processor:latest .
-FROM python:3.8-buster
+FROM python:3.8-slim-buster
 
 RUN apt-get update && \
   apt-get install -y build-essential musl-dev gcc g++ libffi-dev libssl-dev libkrb5-dev libpq-dev \
