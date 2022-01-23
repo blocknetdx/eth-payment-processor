@@ -33,7 +33,7 @@ def add_column(table, name, data_type):
 		conn = db.connect(host=host, database=database, user=user, password=password)
 		conn.autocommit = True
 		cursor = conn.cursor()
-		cursor.execute(f'ALTER TABLE {table} ADD COLUMN {name} data_type {data_type}')
+		cursor.execute(f'ALTER TABLE {table} ADD COLUMN {name} {data_type}')
 		conn.close()
 		print(f'ADD {table} - {name} {data_type}')
 	except Exception as e:
