@@ -25,6 +25,10 @@ def calc_api_calls_tiers(payment_amount_wei, tier1_eth_amount_wei, tier2_eth_amo
     """Calculates the number of api calls for the specified archival mode and tier
     amounts. The [default api call count] * [price multiplier] determines total paid
     api calls. [price multiplier] = [user payment in eth] / [tier required payment in eth]"""
+    if isinstance(tier1_eth_amount_wei, tuple):
+        tier1_eth_amount_wei = tier1_eth_amount_wei[0]
+    if isinstance(tier2_eth_amount_wei, tuple):
+        tier2_eth_amount_wei = tier2_eth_amount_wei[0]
     tier_expected_amount = tier1_eth_amount_wei if not archival_mode else tier2_eth_amount_wei
     multiplier = float(payment_amount_wei) / float(tier_expected_amount)
     logging.info(f"Multiplier {multiplier}")
@@ -219,7 +223,7 @@ class Web3Helper:
         for contract_address in self.avax_accounts:
             balance_contract = self.contract_aablock.functions.balanceOf(Web3.toChecksumAddress(contract_address)).call()
             payment_obj = Payment.get(avax_address=contract_address)
-            amount_aablock = float(Web3.fromWei(balance_contract*10**10, 'ether')) - payment_obj.amount_aablock
+            amount_aablock = float(Web3.fromWei(balance_contract*10**10, 'ether')) - float(payment_obj.amount_aablock)
             if amount_aablock > 0:
                 paid[contract_address] = amount_aablock
         return paid
@@ -229,7 +233,7 @@ class Web3Helper:
         for contract_address in self.eth_accounts:
             balance_contract = self.contract_ablock.functions.balanceOf(contract_address).call()
             payment_obj = Payment.get(eth_address=contract_address)
-            amount_ablock = float(Web3.fromWei(balance_contract*10**10, 'ether')) - payment_obj.amount_ablock
+            amount_ablock = float(Web3.fromWei(balance_contract*10**10, 'ether')) - float(payment_obj.amount_ablock)
             if amount_ablock > 0:
                 paid[contract_address] = amount_ablock
         return paid
