@@ -25,6 +25,10 @@ def calc_api_calls_tiers(payment_amount_wei, tier1_eth_amount_wei, tier2_eth_amo
     """Calculates the number of api calls for the specified archival mode and tier
     amounts. The [default api call count] * [price multiplier] determines total paid
     api calls. [price multiplier] = [user payment in eth] / [tier required payment in eth]"""
+    if isinstance(tier1_eth_amount_wei, tuple):
+        tier1_eth_amount_wei = tier1_eth_amount_wei[0]
+    if isinstance(tier2_eth_amount_wei, tuple):
+        tier2_eth_amount_wei = tier2_eth_amount_wei[0]
     tier_expected_amount = tier1_eth_amount_wei if not archival_mode else tier2_eth_amount_wei
     multiplier = float(payment_amount_wei) / float(tier_expected_amount)
     logging.info(f"Multiplier {multiplier}")
