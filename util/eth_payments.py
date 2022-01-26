@@ -97,76 +97,108 @@ class Web3Helper:
         self.avax_accounts = []
 
     def eth_start(self):
-        if self.ETH_HOST_TYPE!='':
-            latest = self.w3.eth.filter({'toBlock': 'latest'})
-            while True:
-                try:
-                    events = latest.get_new_entries()
-                    if len(events) > 0:  # fetch latest account info
-                        self.fetch_eth_accounts()
-                    self.handle_eth_events(events)
-                except Exception as e:
+        logging.info('ETH loop starting in 2s')
+        time.sleep(2)
+        while True:
+            try:    
+                if self.ETH_HOST_TYPE!='':
                     latest = self.w3.eth.filter({'toBlock': 'latest'})
-                    logging.critical('error handling eth event', exc_info=True)
-                time.sleep(1)
+                    while True:
+                        try:
+                            events = latest.get_new_entries()
+                            if len(events) > 0:  # fetch latest account info
+                                self.fetch_eth_accounts()
+                            self.handle_eth_events(events)
+                        except Exception as e:
+                            latest = self.w3.eth.filter({'toBlock': 'latest'})
+                            logging.critical('error handling eth event', exc_info=True)
+                        time.sleep(1)
+            except Exception as e:
+                logging.info('ETH node error....Retying in 30s')
+                self.__init__()
+                time.sleep(30)
 
     def avax_start(self):
-        if self.AVAX_HOST_TYPE!='':
-            latest = self.w3_avax.eth.filter({'toBlock': 'latest'})
-            while True:
-                try:
-                    events = latest.get_new_entries()
-                    if len(events) > 0:  # fetch latest account info
-                        self.fetch_avax_accounts()
-                    self.handle_avax_events(events)
-                except Exception as e:
+        logging.info('AVAX loop starting in 2s')
+        time.sleep(2)
+        while True:
+            try:
+                if self.AVAX_HOST_TYPE!='':
                     latest = self.w3_avax.eth.filter({'toBlock': 'latest'})
-                    logging.critical('error handling avax event', exc_info=True)
-                time.sleep(1)
+                    while True:
+                        try:
+                            events = latest.get_new_entries()
+                            if len(events) > 0:  # fetch latest account info
+                                self.fetch_avax_accounts()
+                            self.handle_avax_events(events)
+                        except Exception as e:
+                            latest = self.w3_avax.eth.filter({'toBlock': 'latest'})
+                            logging.critical('error handling avax event', exc_info=True)
+                        time.sleep(1)
+            except Exception as e:
+                logging.info('AVAX node error....Retying in 30s')
+                self.__init__()
+                time.sleep(30)
 
     def eth_start_back(self):
-        if self.AVAX_HOST_TYPE!='':
-            LATEST_BLOCK = int(self.w3_back.eth.getBlock('latest').number)
-            CURRENT_BLOCK = LATEST_BLOCK
-            while True:
-                try:
-                    backward_filter = self.w3_back.eth.filter({
-                                'fromBlock': hex(int(CURRENT_BLOCK)-1),
-                                'toBlock': hex(int(CURRENT_BLOCK)),
-                            })
-                    events = backward_filter.get_all_entries()
-                    if len(events) > 0:  # fetch latest account info
-                        self.fetch_eth_accounts()
-                    self.handle_eth_events(events)
-                    if LATEST_BLOCK - CURRENT_BLOCK >= 1000:
-                        CURRENT_BLOCK = LATEST_BLOCK + 1000
-                    else:
-                        CURRENT_BLOCK = CURRENT_BLOCK-2
-                except Exception as e:
-                    logging.critical('error handling eth back event', exc_info=True)
-                time.sleep(1)
+        logging.info('ETH back_loop starting in 4s')
+        time.sleep(4)
+        while True:
+            try:
+                if self.AVAX_HOST_TYPE!='':
+                    LATEST_BLOCK = int(self.w3_back.eth.getBlock('latest').number)
+                    CURRENT_BLOCK = LATEST_BLOCK
+                    while True:
+                        try:
+                            backward_filter = self.w3_back.eth.filter({
+                                        'fromBlock': hex(int(CURRENT_BLOCK)-1),
+                                        'toBlock': hex(int(CURRENT_BLOCK)),
+                                    })
+                            events = backward_filter.get_all_entries()
+                            if len(events) > 0:  # fetch latest account info
+                                self.fetch_eth_accounts()
+                            self.handle_eth_events(events)
+                            if LATEST_BLOCK - CURRENT_BLOCK >= 1000:
+                                CURRENT_BLOCK = LATEST_BLOCK + 1000
+                            else:
+                                CURRENT_BLOCK = CURRENT_BLOCK-2
+                        except Exception as e:
+                            logging.critical('error handling eth back event', exc_info=True)
+                        time.sleep(1)
+            except Exception as e:
+                logging.info('ETH node error....Retying in 30s')
+                self.__init__()
+                time.sleep(30)
 
     def avax_start_back(self):
-        if self.AVAX_HOST_TYPE!='':
-            LATEST_BLOCK = int(self.w3_avax_back.eth.getBlock('latest').number)
-            CURRENT_BLOCK = LATEST_BLOCK
-            while True:
-                try:
-                    backward_filter = self.w3_avax_back.eth.filter({
-                                'fromBlock': hex(int(CURRENT_BLOCK)-1),
-                                'toBlock': hex(int(CURRENT_BLOCK)),
-                            })
-                    events = backward_filter.get_all_entries()
-                    if len(events) > 0:  # fetch latest account info
-                        self.fetch_avax_accounts()
-                    self.handle_avax_events(events)
-                    if LATEST_BLOCK - CURRENT_BLOCK >= 1000:
-                        CURRENT_BLOCK = LATEST_BLOCK + 1000
-                    else:
-                        CURRENT_BLOCK = CURRENT_BLOCK-2
-                except Exception as e:
-                    logging.critical('error handling avax back event', exc_info=True)
-                time.sleep(1)
+        logging.info('AVAX back_loop starting in 4s')
+        time.sleep(4)
+        while True:
+            try:
+                if self.AVAX_HOST_TYPE!='':
+                    LATEST_BLOCK = int(self.w3_avax_back.eth.getBlock('latest').number)
+                    CURRENT_BLOCK = LATEST_BLOCK
+                    while True:
+                        try:
+                            backward_filter = self.w3_avax_back.eth.filter({
+                                        'fromBlock': hex(int(CURRENT_BLOCK)-1),
+                                        'toBlock': hex(int(CURRENT_BLOCK)),
+                                    })
+                            events = backward_filter.get_all_entries()
+                            if len(events) > 0:  # fetch latest account info
+                                self.fetch_avax_accounts()
+                            self.handle_avax_events(events)
+                            if LATEST_BLOCK - CURRENT_BLOCK >= 1000:
+                                CURRENT_BLOCK = LATEST_BLOCK + 1000
+                            else:
+                                CURRENT_BLOCK = CURRENT_BLOCK-2
+                        except Exception as e:
+                            logging.critical('error handling avax back event', exc_info=True)
+                        time.sleep(1)
+            except Exception as e:
+                logging.info('AVAX node error....Retying in 30s')
+                self.__init__()
+                time.sleep(30)
 
     @db_session(optimistic=False)
     def fetch_eth_accounts(self):
