@@ -15,4 +15,4 @@ RUN pip3 install -r /app/manager/requirements.txt
 COPY . /app/manager/
 WORKDIR /app/manager
 
-CMD ["python3", "/app/manager/main.py"]
+CMD python3 migrate_db.py && python3 /app/manager/main.py
