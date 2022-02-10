@@ -8,8 +8,8 @@ from util.price_aablock import get_price_aablock
 
 min_payment_amount_tier1 = float(os.environ.get('PAYMENT_AMOUNT_TIER1', 35))
 min_payment_amount_tier2 = float(os.environ.get('PAYMENT_AMOUNT_TIER2', 200))
-discount_ablock = float((100 - os.environ.get('DISCOUNT_ABLOCK', 20))/100)
-discount_aablock = float((100 - os.environ.get('DISCOUNT_AABLOCK', 0))/100)
+discount_ablock = float((100 - int(os.environ.get('DISCOUNT_ABLOCK', 20)))/100)
+discount_aablock = float((100 - int(os.environ.get('DISCOUNT_AABLOCK', 0)))/100)
 
 aBlock = Web3.toChecksumAddress('0xe692c8d72bd4ac7764090d54842a305546dd1de5')
 USDT = Web3.toChecksumAddress('0xdac17f958d2ee523a2206206994597c13d831ec7')
