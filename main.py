@@ -50,12 +50,8 @@ def on_startup():
     t1.start()
     t2 = Thread(target=web3_helper.avax_start, daemon=True)
     t2.start()
-    t3 = Thread(target=web3_helper.eth_start_back, daemon=True)
+    t3 = Thread(target=update_api_counts, daemon=True)
     t3.start()
-    t4 = Thread(target=web3_helper.avax_start_back, daemon=True)
-    t4.start()
-    t5 = Thread(target=update_api_counts, daemon=True)
-    t5.start()
 
 class FlaskWithStartUp(Flask):
     def run(self, host=None, port=None, debug=None, load_dotenv=True, **options):
