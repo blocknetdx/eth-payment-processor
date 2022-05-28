@@ -25,6 +25,9 @@ class Payment(db.Entity):
     avax_token = Optional(str)
     avax_address = Optional(str)
     avax_privkey = Optional(str)
+    nevm_token = Optional(str)
+    nevm_address = Optional(str)
+    nevm_privkey = Optional(str)
 
     tier1_expected_amount = Optional(float)
     tier2_expected_amount = Optional(float)
@@ -32,11 +35,17 @@ class Payment(db.Entity):
     tier2_expected_amount_ablock = Optional(float)
     tier1_expected_amount_aablock = Optional(float)
     tier2_expected_amount_aablock = Optional(float)
+    tier1_expected_amount_sysblock = Optional(float)
+    tier2_expected_amount_sysblock = Optional(float)
+    tier1_expected_amount_sys = Optional(float)
+    tier2_expected_amount_sys = Optional(float)
 
     tx_hash = Optional(str)
     amount = Optional(float)
     amount_ablock = Optional(float)
     amount_aablock = Optional(float)
+    amount_sysblock = Optional(float)
+    amount_sys = Optional(float)
     start_time = Required(datetime)
 
     project = Required(Project, reverse='payments')

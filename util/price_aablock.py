@@ -62,6 +62,24 @@ def get_price_aablock():
     token0Address = aablockContract.functions.token0().call()
     token1Address = aablockContract.functions.token1().call()
 
-    price_ablock = price(reserveToken0, reserveToken1, token0Address, token1Address)
+    price_aablock = price(reserveToken0, reserveToken1, token0Address, token1Address)
 
-    return price_usdt / price_ablock
+    return price_usdt / price_aablock
+
+
+def get_aablock_amount(amount):
+    global aablock_price
+    global last_amount_update_time_aablock
+
+    try:
+        if last_amount_update_time_aablock is None or (int(time.time()) - 60) > last_amount_update_time_aablock:
+            aablock_price = get_price_aablock()
+            last_amount_update_time_aablock = int(time.time())
+    except Exception as e:
+        logging.critical('Pangolin aablock price lookup failed with error:', exc_info=True)
+        return None
+
+    if aablock_price is None:
+        return None
+
+    return float('{:.6f}'.format(amount / aablock_price))
