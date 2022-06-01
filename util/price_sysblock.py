@@ -22,7 +22,7 @@ with open("util/pegasys_router_abi.json", 'r') as file:
     PegasysRouterABI = json.load(file)
     
 usdtContract_address = '0x922D641a426DcFFaeF11680e5358F34d97d112E1'
-sysblockContract_address = '0xtbd'
+sysblockContract_address = '0x0xe18c200a70908c89ffa18c628fe1b83ac006'
 
 
 def get_price_pegasys(address1, address2):

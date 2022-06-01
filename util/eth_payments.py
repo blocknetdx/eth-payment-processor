@@ -17,7 +17,6 @@ default_api_calls_count = 6000000
 
 ablock_contract_address = Web3.toChecksumAddress('0xe692c8d72bd4ac7764090d54842a305546dd1de5')
 aablock_contract_address = Web3.toChecksumAddress('0xC931f61B1534EB21D8c11B24f3f5Ab2471d4aB50')
-sysblock_contract_address = Web3.toChecksumAddress('0xtbd')
 
 with open("util/ablock_abi.json", "r") as file:
     abi = json.load(file)
