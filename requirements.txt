@@ -2,3 +2,4 @@ pony~=0.7.14
 flask~=1.1.2
 web3==5.25.0
 psycopg2==2.9.3
+MarkupSafe==2.0.1

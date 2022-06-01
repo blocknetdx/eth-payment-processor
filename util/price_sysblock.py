@@ -16,23 +16,22 @@ if NEVM_HOST_TYPE in ['http','https']:
     provider_nevm = Web3(Web3.HTTPProvider(f'{NEVM_HOST_TYPE}://{NEVM_HOST}:{NEVM_PORT}'))
     provider_nevm.middleware_onion.inject(geth_poa_middleware, layer=0)
 elif NEVM_HOST_TYPE in ['ws','wss']:
-    provider_avax = Web3(Web3.WebsocketProvider(f'{NEVM_HOST_TYPE}://{NEVM_HOST}:{NEVM_PORT}'))
-    provider_avax.middleware_onion.inject(geth_poa_middleware, layer=0)
+    provider_nevm = Web3(Web3.WebsocketProvider(f'{NEVM_HOST_TYPE}://{NEVM_HOST}:{NEVM_PORT}'))
+    provider_nevm.middleware_onion.inject(geth_poa_middleware, layer=0)
 with open("util/pegasys_router_abi.json", 'r') as file:
     PegasysRouterABI = json.load(file)
     
 usdtContract_address = '0x922D641a426DcFFaeF11680e5358F34d97d112E1'
-sysblockContract_address = '0x0xe18c200a70908c89ffa18c628fe1b83ac006'
+sysblockContract_address = '0x0xe18c200a70908c89ffa18c628fe1b83ac006' # Use PSYS for now
 
 
 def get_price_pegasys(address1, address2):
-    router = w3_conn.eth.contract(address=PegasysRouterABI['contractAddress'], abi=PegasysRouterABI['abi'])
-    token = w3_conn.toWei(1, 'Ether')
+    router = provider_nevm.eth.contract(address=PegasysRouterABI['contractAddress'], abi=PegasysRouterABI['abi'])
+    token = provider_nevm.toWei(1, 'Ether')
 
     price = router.functions.getAmountsOut(token, [address1, address2]).call()
     price = price[1] / (10 ** 2)
     return price
-
 
 
 def get_price_sysblock():
@@ -55,7 +54,7 @@ def get_price_sysblock():
         return price_token
 
     usdtContract = provider_nevm.eth.contract(address=provider_nevm.toChecksumAddress(usdtContract_address), abi=poolABI)
-    sysblockContract = provider_avax.eth.contract(address=provider_nevm.toChecksumAddress(sysblockContract_address), abi=poolABI)
+    sysblockContract = provider_nevm.eth.contract(address=provider_nevm.toChecksumAddress(sysblockContract_address), abi=poolABI)
 
     reserves_usdt = usdtContract.functions.getReserves().call()
     reserveToken0 = reserves_usdt[0]
@@ -76,39 +75,3 @@ def get_price_sysblock():
     price_sysblock = price(reserveToken0, reserveToken1, token0Address, token1Address)
 
     return price_usdt / price_sysblock
-
-
-def get_sysblock_amount(amount):
-    global sysblock_price
-    global last_amount_update_time_sysblock
-
-    try:
-        if last_amount_update_time_sysblock is None or (int(time.time()) - 60) > last_amount_update_time_sysblock:
-            sysblock_price = get_price_sysblock()
-            last_amount_update_time_sysblock = int(time.time())
-    except Exception as e:
-        logging.critical('Pegasys sysblock price lookup failed with error:',exc_info=True)
-        return None
-
-    if sysblock_price is None:
-        return None
-
-    return float('{:.6f}'.format(amount / sysblock_price))
-
-
-def get_sys_amount(amount):
-    global sys_price
-    global last_amount_update_time_sys
-
-    try:
-        if last_amount_update_time_sys is None or (int(time.time()) - 60) > last_amount_update_time_sys:
-            sys_price = get_price_pegasys(WSYS,USDT)/(10**4)
-            last_amount_update_time_sys = int(time.time())
-    except Exception as e:
-        logging.critical('Sys price lookup failed with error:', exc_info=True)
-        return None
-
-    if sys_price is None:
-        return None
-
-    return float('{:.6f}'.format(amount / sys_price))

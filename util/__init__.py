@@ -5,7 +5,7 @@ import json
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
 from util.price_aablock import get_price_aablock
-from util.price_sysblock import get_price_sysblock
+from util.price_sysblock import get_price_pegasys, get_price_sysblock
 
 min_payment_amount_tier1 = float(os.environ.get('PAYMENT_AMOUNT_TIER1', 35))
 min_payment_amount_tier2 = float(os.environ.get('PAYMENT_AMOUNT_TIER2', 200))
@@ -16,6 +16,8 @@ discount_sysblock = float((100 - int(os.environ.get('DISCOUNT_SYSBLOCK', 10)))/1
 aBlock = Web3.toChecksumAddress('0xe692c8d72bd4ac7764090d54842a305546dd1de5')
 USDT = Web3.toChecksumAddress('0xdac17f958d2ee523a2206206994597c13d831ec7')
 WETH = Web3.toChecksumAddress('0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2')
+WSYS = Web3.toChecksumAddress('0xd3e822f3ef011Ca5f17D82C956D952D8d7C3A1BB')
+sysUSDT = Web3.toChecksumAddress('0x922D641a426DcFFaeF11680e5358F34d97d112E1')
 
 last_amount_update_time_eth = None
 last_amount_update_time_ablock = None
@@ -88,4 +90,56 @@ def get_ablock_amount(amount):
     return float('{:.6f}'.format(amount / ablock_price))
 
 
+def get_aablock_amount(amount):
+    global aablock_price
+    global last_amount_update_time_aablock
+
+    try:
+        if last_amount_update_time_aablock is None or (int(time.time()) - 60) > last_amount_update_time_aablock:
+            aablock_price = get_price_aablock()
+            last_amount_update_time_aablock = int(time.time())
+    except Exception as e:
+        logging.critical('Pangolin aablock price lookup failed with error:', exc_info=True)
+        return None
+
+    if aablock_price is None:
+        return None
+
+    return float('{:.6f}'.format(amount / aablock_price))
+
+
+def get_sysblock_amount(amount):
+    global sysblock_price
+    global last_amount_update_time_sysblock
+
+    try:
+        if last_amount_update_time_sysblock is None or (int(time.time()) - 60) > last_amount_update_time_sysblock:
+            sysblock_price = get_price_sysblock()
+            last_amount_update_time_sysblock = int(time.time())
+    except Exception as e:
+        logging.critical('Pegasys sysblock price lookup failed with error:',exc_info=True)
+        return None
+
+    if sysblock_price is None:
+        return None
+
+    return float('{:.6f}'.format(amount / sysblock_price))
+
+
+def get_sys_amount(amount):
+    global sys_price
+    global last_amount_update_time_sys
+
+    try:
+        if last_amount_update_time_sys is None or (int(time.time()) - 60) > last_amount_update_time_sys:
+            sys_price = get_price_pegasys(WSYS,sysUSDT)/(10**4)
+            last_amount_update_time_sys = int(time.time())
+    except Exception as e:
+        logging.critical('Sys price lookup failed with error:', exc_info=True)
+        return None
+
+    if sys_price is None:
+        return None
+
+    return float('{:.6f}'.format(amount / sys_price))
 

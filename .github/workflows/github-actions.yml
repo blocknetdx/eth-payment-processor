@@ -1,5 +1,5 @@
 name: eth-payment-processor docker image
-on: [push]
+on: [push, workflow_dispatch]
 jobs:
 
   build:

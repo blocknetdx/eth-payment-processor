@@ -17,6 +17,7 @@ default_api_calls_count = 6000000
 
 ablock_contract_address = Web3.toChecksumAddress('0xe692c8d72bd4ac7764090d54842a305546dd1de5')
 aablock_contract_address = Web3.toChecksumAddress('0xC931f61B1534EB21D8c11B24f3f5Ab2471d4aB50')
+sysblock_contract_address = Web3.toChecksumAddress('0xe18c200a70908c89ffa18c628fe1b83ac0065ea4')
 
 with open("util/ablock_abi.json", "r") as file:
     abi = json.load(file)
@@ -102,21 +103,21 @@ class Web3Helper:
             self.w3.middleware_onion.inject(geth_poa_middleware, layer=0)
             self.w3_accounts.middleware_onion.inject(geth_poa_middleware, layer=0)
         if self.NEVM_HOST_TYPE in ['http','https'] and self.NEVM_HOST!='':
-            self.w3 = Web3(Web3.HTTPProvider(f'{self.NEVM_HOST_TYPE}://{self.NEVM_HOST}:{self.NEVM_PORT}'))
-            self.w3_accounts = Web3(Web3.HTTPProvider(f'{self.NEVM_HOST_TYPE}://{self.NEVM_HOST}:{self.NEVM_PORT}'))
-            self.w3.middleware_onion.inject(geth_poa_middleware, layer=0)
-            self.w3_accounts.middleware_onion.inject(geth_poa_middleware, layer=0)
+            self.w3_nevm = Web3(Web3.HTTPProvider(f'{self.NEVM_HOST_TYPE}://{self.NEVM_HOST}:{self.NEVM_PORT}'))
+            self.w3_nevm_accounts = Web3(Web3.HTTPProvider(f'{self.NEVM_HOST_TYPE}://{self.NEVM_HOST}:{self.NEVM_PORT}'))
+            self.w3_nevm.middleware_onion.inject(geth_poa_middleware, layer=0)
+            self.w3_nevm_accounts.middleware_onion.inject(geth_poa_middleware, layer=0)
         elif self.NEVM_HOST_TYPE in ['ws','wss'] and self.NEVM_HOST!='':
-            self.w3 = Web3(Web3.WebsocketProvider(f'{self.NEVM_HOST_TYPE}://{self.NEVM_HOST}:{self.NEVM_PORT}'))
-            self.w3_accounts = Web3(Web3.WebsocketProvider(f'{self.NEVM_HOST_TYPE}://{self.NEVM_HOST}:{self.NEVM_PORT}'))
-            self.w3.middleware_onion.inject(geth_poa_middleware, layer=0)
-            self.w3_accounts.middleware_onion.inject(geth_poa_middleware, layer=0)
+            self.w3_nevm = Web3(Web3.WebsocketProvider(f'{self.NEVM_HOST_TYPE}://{self.NEVM_HOST}:{self.NEVM_PORT}'))
+            self.w3_nevm_accounts = Web3(Web3.WebsocketProvider(f'{self.NEVM_HOST_TYPE}://{self.NEVM_HOST}:{self.NEVM_PORT}'))
+            self.w3_nevm.middleware_onion.inject(geth_poa_middleware, layer=0)
+            self.w3_nevm_accounts.middleware_onion.inject(geth_poa_middleware, layer=0)
         if self.ETH_HOST_TYPE!='':
             self.contract_ablock = self.w3.eth.contract(address=ablock_contract_address, abi=abi)
         if self.AVAX_HOST_TYPE!='':
             self.contract_aablock = self.w3_avax.eth.contract(address=aablock_contract_address, abi=abi)
         if self.NEVM_HOST_TYPE!='':
-            self.contract_sysblock = self.w3_avax.eth.contract(address=sysblock_contract_address, abi=abi)
+            self.contract_sysblock = self.w3_nevm.eth.contract(address=sysblock_contract_address, abi=abi)
         self.eth_accounts = []
         self.avax_accounts = []
         self.nevm_accounts = []
