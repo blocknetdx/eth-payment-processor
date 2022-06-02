@@ -198,7 +198,7 @@ class Web3Helper:
         query = Payment.select(lambda payment: payment.start_time is not None and payment.nevm_address is not None and payment.nevm_address!='')
         accounts = [payment.nevm_address for payment in query]
         if len(accounts) > 0:
-            self.nevm_accounts = a
+            self.nevm_accounts = accounts
 
     def get_eth_address(self):
         try:
@@ -272,7 +272,7 @@ class Web3Helper:
     def check_sys_balance(self):
         paid = {}
         for address in self.nevm_accounts:
-            balance = self.w3.eth.getBalance(Web3.toChecksumAddress(address))
+            balance = self.w3_nevm.eth.getBalance(Web3.toChecksumAddress(address))
             amount_sys = float(Web3.fromWei(balance, 'sys'))
             if amount_sys > 0:
                 paid[address] = amount_sys
