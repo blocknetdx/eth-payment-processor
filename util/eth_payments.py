@@ -255,7 +255,7 @@ class Web3Helper:
         paid = {}
         for contract_address in self.nevm_accounts:
             balance_contract = self.contract_sysblock.functions.balanceOf(Web3.toChecksumAddress(contract_address)).call()
-            amount_sysblock = float(Web3.fromWei(balance_contract*10**10, 'ether'))
+            amount_sysblock = float(Web3.fromWei(balance_contract, 'ether'))
             if amount_sysblock > 0:
                 paid[contract_address] = amount_sysblock
         return paid
@@ -273,7 +273,7 @@ class Web3Helper:
         paid = {}
         for address in self.nevm_accounts:
             balance = self.w3_nevm.eth.getBalance(Web3.toChecksumAddress(address))
-            amount_sys = float(Web3.fromWei(balance, 'sys'))
+            amount_sys = float(Web3.fromWei(balance, 'ether'))
             if amount_sys > 0:
                 paid[address] = amount_sys
         return paid    
@@ -417,9 +417,9 @@ class Web3Helper:
 
         if sys_accounts:
             for to_address in sys_accounts:
-                payment_obj = Payment.get(sys_address=to_address)
+                payment_obj = Payment.get(nevm_address=to_address)
                 value = sys_accounts[to_address]
-                if value >= payment_obj.tier1_expected_amount:
+                if value >= payment_obj.tier1_expected_amount_sys:
                     logging.info('sys payment received for project: {} {} {}'.format(payment_obj.project.name,
                                                                                  to_address, value))
 
@@ -430,17 +430,17 @@ class Web3Helper:
                         if datetime.datetime.now() >= payment_obj.start_time + datetime.timedelta(hours=1):
                             payment_obj.project.archive_mode = False
                             payment_obj.project.api_token_count = calc_api_calls_tiers(value,
-                                                                                       payment_obj.tier1_expected_amount,
-                                                                                       payment_obj.tier2_expected_amount,
+                                                                                       payment_obj.tier1_expected_amount_sys,
+                                                                                       payment_obj.tier2_expected_amount_sys,
                                                                                        payment_obj.project.archive_mode,
                                                                                        default_api_calls_count/2)    
                         else:
                             # Non-expired payment calcs should use the db payment tiers
-                            payment_obj.project.archive_mode = value >= payment_obj.tier2_expected_amount
+                            payment_obj.project.archive_mode = value >= payment_obj.tier2_expected_amount_sys
                             # Note set the api calls here since first time payment (do not append)
                             payment_obj.project.api_token_count = calc_api_calls_tiers(value,
-                                                                                       payment_obj.tier1_expected_amount,
-                                                                                       payment_obj.tier2_expected_amount,
+                                                                                       payment_obj.tier1_expected_amount_sys,
+                                                                                       payment_obj.tier2_expected_amount_sys,
                                                                                        payment_obj.project.archive_mode,
                                                                                        default_api_calls_count)            
                         payment_obj.pending = False
@@ -452,7 +452,7 @@ class Web3Helper:
                                 or (payment_obj.project.api_token_count > 0 and payment_obj.project.used_api_tokens is None):
                             payment_obj.project.active = True
 
-                        payment_obj.amount = float(value)
+                        payment_obj.amount_sys = float(value)
 
                         payment_obj.project.expires = datetime.datetime.now() + datetime.timedelta(days=30)
                 else:
@@ -490,7 +490,7 @@ class Web3Helper:
                                 or (payment_obj.project.api_token_count > 0 and payment_obj.project.used_api_tokens is None):
                             payment_obj.project.active = True
 
-                        payment_obj.amount_aablock = float(value)
+                        payment_obj.amount_sysblock = float(value)
 
                         payment_obj.project.expires = datetime.datetime.now() + datetime.timedelta(days=30)
                 else:

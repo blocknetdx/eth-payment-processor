@@ -137,6 +137,7 @@ def create_project():
                 avax_token=avax_token if avax_token!=None else '',
                 avax_address=avax_address if avax_address!=None else '',
                 avax_privkey=avax_privkey if avax_privkey!=None else '',
+                nevm_token=nevm_token if nevm_token!=None else '',
                 nevm_address=nevm_address if nevm_address!=None else '',
                 nevm_privkey=nevm_privkey if nevm_privkey!=None else '',
                 start_time=start_time,
@@ -152,7 +153,9 @@ def create_project():
                 tier1_expected_amount_sys=tier1_expected_amount_sys if tier1_expected_amount_sys!=None else -1,
                 tier2_expected_amount_sys=tier2_expected_amount_sys if tier2_expected_amount_sys!=None else -1,
                 amount_aablock=0,
-                amount_ablock=0
+                amount_ablock=0,
+                amount_sysblock=0,
+                amount_sys=0
             )
 
             commit()
@@ -171,6 +174,7 @@ def create_project():
             'api_key': api_key,
             'payment_eth_address': eth_address,
             'payment_avax_address': avax_address,
+            'payment_sys_address': nevm_address,
             'payment_amount_tier1_eth': tier1_expected_amount,
             'payment_amount_tier2_eth': tier2_expected_amount,
             'payment_amount_tier1_ablock': tier1_expected_amount_ablock,

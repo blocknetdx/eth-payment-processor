@@ -21,9 +21,8 @@ elif NEVM_HOST_TYPE in ['ws','wss']:
 with open("util/pegasys_router_abi.json", 'r') as file:
     PegasysRouterABI = json.load(file)
     
-usdtContract_address = '0x922D641a426DcFFaeF11680e5358F34d97d112E1'
-sysblockContract_address = '0x0xe18c200a70908c89ffa18c628fe1b83ac006' # Use PSYS for now
-
+usdtContract_address = '0x0df7d92a4db09d3828a725d039b89fdc8dfc96a6' # USDT/WSYS pair
+sysblockContract_address = '0x1a7400f4dfe299dbac8034bd2bb0b3b17fca9342' # Use PSYS/WSYS as proxy for sysBLOCK
 
 def get_price_pegasys(address1, address2):
     router = provider_nevm.eth.contract(address=PegasysRouterABI['contractAddress'], abi=PegasysRouterABI['abi'])
