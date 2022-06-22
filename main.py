@@ -10,7 +10,7 @@ from threading import Thread
 from flask import Flask, request, Response, g, jsonify
 from database.models import commit, db_session, select, Project, Payment
 from util.eth_payments import Web3Helper
-from util import get_eth_amount, get_sys_amount, get_ablock_amount, get_aablock_amount, get_sysblock_amount, \
+from util import get_eth_amount, get_wsys_amount, get_ablock_amount, get_aablock_amount, get_sysblock_amount, \
                  min_payment_amount_tier1, min_payment_amount_tier2, discount_ablock, discount_aablock, discount_sysblock
 
 LOGLEVEL = os.environ.get('LOGLEVEL', 'INFO').upper()
@@ -71,27 +71,27 @@ app = FlaskWithStartUp(__name__)
 def create_project():
     logging.info('Creating new pending project')
     # fetch eth
-    tier1_expected_amount = get_eth_amount(min_payment_amount_tier1)
-    tier2_expected_amount = get_eth_amount(min_payment_amount_tier2)
+    tier1_expected_amount_eth = get_eth_amount(min_payment_amount_tier1)
+    tier2_expected_amount_eth = get_eth_amount(min_payment_amount_tier2)
     tier1_expected_amount_ablock = get_ablock_amount(min_payment_amount_tier1 * discount_ablock)
     tier2_expected_amount_ablock = get_ablock_amount(min_payment_amount_tier2 * discount_ablock)
     tier1_expected_amount_aablock = get_aablock_amount(min_payment_amount_tier1 * discount_aablock)
     tier2_expected_amount_aablock = get_aablock_amount(min_payment_amount_tier2 * discount_aablock)
     tier1_expected_amount_sysblock = get_sysblock_amount(min_payment_amount_tier1 * discount_sysblock)
     tier2_expected_amount_sysblock = get_sysblock_amount(min_payment_amount_tier2 * discount_sysblock)
-    tier1_expected_amount_sys = get_sys_amount(min_payment_amount_tier1)
-    tier2_expected_amount_sys = get_sys_amount(min_payment_amount_tier2)
+    tier1_expected_amount_wsys = get_wsys_amount(min_payment_amount_tier1)
+    tier2_expected_amount_wsys = get_wsys_amount(min_payment_amount_tier2)
     amounts = {
-    "eth_tier1":tier1_expected_amount,
-    "eth_tier2":tier2_expected_amount,
+    "eth_tier1":tier1_expected_amount_eth,
+    "eth_tier2":tier2_expected_amount_eth,
     "ablock_tier1":tier1_expected_amount_ablock,
     "ablock_tier2":tier2_expected_amount_ablock,
     "aablock_tier1":tier1_expected_amount_aablock,
     "aablock_tier2":tier2_expected_amount_aablock,
     "sysblock_tier1":tier1_expected_amount_sysblock,
     "sysblock_tier2":tier2_expected_amount_sysblock,
-    "sys_tier1":tier1_expected_amount_sys,
-    "sys_tier2":tier2_expected_amount_sys
+    "wsys_tier1":tier1_expected_amount_wsys,
+    "wsys_tier2":tier2_expected_amount_wsys
     }
     if list(amounts.values()).count(None)>=9:
         context = {
@@ -110,7 +110,7 @@ def create_project():
 
     logging.info(f'Creating project {project_name} with payment amounts: {amounts}')
 
-    if tier1_expected_amount is None and tier2_expected_amount is None and tier1_expected_amount_ablock is None and tier2_expected_amount_ablock is None:
+    if tier1_expected_amount_eth is None and tier2_expected_amount_eth is None and tier1_expected_amount_ablock is None and tier2_expected_amount_ablock is None:
         eth_address = None
 
     try:
@@ -142,20 +142,21 @@ def create_project():
                 nevm_privkey=nevm_privkey if nevm_privkey!=None else '',
                 start_time=start_time,
                 project=project,
-                tier1_expected_amount=tier1_expected_amount if tier1_expected_amount!=None else -1,
-                tier2_expected_amount=tier2_expected_amount if tier2_expected_amount!=None else -1,
+                tier1_expected_amount_eth=tier1_expected_amount_eth if tier1_expected_amount_eth!=None else -1,
+                tier2_expected_amount_eth=tier2_expected_amount_eth if tier2_expected_amount_eth!=None else -1,
                 tier1_expected_amount_ablock=tier1_expected_amount_ablock if tier1_expected_amount_ablock!=None else -1,
                 tier2_expected_amount_ablock=tier2_expected_amount_ablock if tier2_expected_amount_ablock!=None else -1,
                 tier1_expected_amount_aablock=tier1_expected_amount_aablock if tier1_expected_amount_aablock!=None else -1,
                 tier2_expected_amount_aablock=tier2_expected_amount_aablock if tier2_expected_amount_aablock!=None else -1,
                 tier1_expected_amount_sysblock=tier1_expected_amount_sysblock if tier1_expected_amount_sysblock!=None else -1,
                 tier2_expected_amount_sysblock=tier2_expected_amount_sysblock if tier2_expected_amount_sysblock!=None else -1,
-                tier1_expected_amount_sys=tier1_expected_amount_sys if tier1_expected_amount_sys!=None else -1,
-                tier2_expected_amount_sys=tier2_expected_amount_sys if tier2_expected_amount_sys!=None else -1,
-                amount_aablock=0,
+                tier1_expected_amount_wsys=tier1_expected_amount_wsys if tier1_expected_amount_wsys!=None else -1,
+                tier2_expected_amount_wsys=tier2_expected_amount_wsys if tier2_expected_amount_wsys!=None else -1,
+                amount_eth=0,
+                amount_ablock=0,
                 amount_ablock=0,
                 amount_sysblock=0,
-                amount_sys=0
+                amount_wsys=0
             )
 
             commit()
@@ -174,17 +175,17 @@ def create_project():
             'api_key': api_key,
             'payment_eth_address': eth_address,
             'payment_avax_address': avax_address,
-            'payment_sys_address': nevm_address,
-            'payment_amount_tier1_eth': tier1_expected_amount,
-            'payment_amount_tier2_eth': tier2_expected_amount,
+            'payment_nevm_address': nevm_address,
+            'payment_amount_tier1_eth': tier1_expected_amount_eth,
+            'payment_amount_tier2_eth': tier2_expected_amount_eth,
             'payment_amount_tier1_ablock': tier1_expected_amount_ablock,
             'payment_amount_tier2_ablock': tier2_expected_amount_ablock,
             'payment_amount_tier1_aablock': tier1_expected_amount_aablock,
             'payment_amount_tier2_aablock': tier2_expected_amount_aablock,
             'payment_amount_tier1_sysblock': tier1_expected_amount_sysblock,
             'payment_amount_tier2_sysblock': tier2_expected_amount_sysblock,
-            'payment_amount_tier1_sys': tier1_expected_amount_sys,
-            'payment_amount_tier2_sys': tier2_expected_amount_sys,
+            'payment_amount_tier1_wsys': tier1_expected_amount_wsys,
+            'payment_amount_tier2_wsys': tier2_expected_amount_wsys,
             'expiry_time': payment_expires.strftime("%Y-%m-%d %H:%M:%S EST")
         }
     }

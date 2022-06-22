@@ -22,12 +22,12 @@ sysUSDT = Web3.toChecksumAddress('0x922D641a426DcFFaeF11680e5358F34d97d112E1')
 last_amount_update_time_eth = None
 last_amount_update_time_ablock = None
 last_amount_update_time_aablock = None
-last_amount_update_time_sys = None
+last_amount_update_time_wsys = None
 last_amount_update_time_sysblock = None
 eth_price = None
 ablock_price = None
 aablock_price = None
-sys_price = None
+wsys_price = None
 sysblock_price = None
 
 ETH_HOST = os.environ.get('ETH_HOST', '')
@@ -126,20 +126,20 @@ def get_sysblock_amount(amount):
     return float('{:.6f}'.format(amount / sysblock_price))
 
 
-def get_sys_amount(amount):
-    global sys_price
-    global last_amount_update_time_sys
+def get_wsys_amount(amount):
+    global wsys_price
+    global last_amount_update_time_wsys
 
     try:
-        if last_amount_update_time_sys is None or (int(time.time()) - 60) > last_amount_update_time_sys:
-            sys_price = get_price_pegasys(WSYS,sysUSDT)/(10**4)
-            last_amount_update_time_sys = int(time.time())
+        if last_amount_update_time_wsys is None or (int(time.time()) - 60) > last_amount_update_time_wsys:
+            wsys_price = get_price_pegasys(WSYS,sysUSDT)/(10**4)
+            last_amount_update_time_wsys = int(time.time())
     except Exception as e:
-        logging.critical('Sys price lookup failed with error:', exc_info=True)
+        logging.critical('WSYS price lookup failed with error:', exc_info=True)
         return None
 
-    if sys_price is None:
+    if wsys_price is None:
         return None
 
-    return float('{:.6f}'.format(amount / sys_price))
+    return float('{:.6f}'.format(amount / wsys_price))
 
