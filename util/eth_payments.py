@@ -288,7 +288,7 @@ class Web3Helper:
             for to_address in eth_accounts:
                 payment_obj = Payment.get(eth_address=to_address)
                 value = eth_accounts[to_address]
-                if value >= payment_obj.tier1_expected_amount:
+                if value >= payment_obj.tier1_expected_amount_eth:
                     logging.info('ETH payment received for project: {} {} {}'.format(payment_obj.project.name,
                                                                                  to_address, value))
 
@@ -299,17 +299,17 @@ class Web3Helper:
                         if datetime.datetime.now() >= payment_obj.start_time + datetime.timedelta(hours=1):
                             payment_obj.project.archive_mode = False
                             payment_obj.project.api_token_count = calc_api_calls_tiers(value,
-                                                                                       payment_obj.tier1_expected_amount,
-                                                                                       payment_obj.tier2_expected_amount,
+                                                                                       payment_obj.tier1_expected_amount_eth,
+                                                                                       payment_obj.tier2_expected_amount_eth,
                                                                                        payment_obj.project.archive_mode,
                                                                                        default_api_calls_count/2)    
                         else:
                             # Non-expired payment calcs should use the db payment tiers
-                            payment_obj.project.archive_mode = value >= payment_obj.tier2_expected_amount
+                            payment_obj.project.archive_mode = value >= payment_obj.tier2_expected_amount_eth
                             # Note set the api calls here since first time payment (do not append)
                             payment_obj.project.api_token_count = calc_api_calls_tiers(value,
-                                                                                       payment_obj.tier1_expected_amount,
-                                                                                       payment_obj.tier2_expected_amount,
+                                                                                       payment_obj.tier1_expected_amount_eth,
+                                                                                       payment_obj.tier2_expected_amount_eth,
                                                                                        payment_obj.project.archive_mode,
                                                                                        default_api_calls_count)            
                         payment_obj.pending = False

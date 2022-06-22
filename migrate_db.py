@@ -87,8 +87,8 @@ if __name__ == '__main__':
 	rename_column('payment','tier1_expected_amount_sys', 'tier1_expected_amount_wsys')
 	rename_column('payment','tier2_expected_amount_sys', 'tier2_expected_amount_wsys')
 	rename_column('payment','amount_sys', 'amount_wsys')
-	
-	rename_column('payment','tier1_expected_amount', 'tier1_expected_amount_eth')
-	rename_column('payment','tier2_expected_amount', 'tier2_expected_amount_eth')
-	rename_column('payment','amount', 'amount_eth')
+
+	add_column('payment','tier1_expected_amount_eth', 'float8')
+	add_column('payment','tier2_expected_amount_eth', 'float8')
+	add_column('payment','amount_eth', 'float8')
 

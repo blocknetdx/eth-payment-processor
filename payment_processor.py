@@ -154,7 +154,7 @@ def create_project():
                 tier2_expected_amount_wsys=tier2_expected_amount_wsys if tier2_expected_amount_wsys!=None else -1,
                 amount_eth=0,
                 amount_ablock=0,
-                amount_ablock=0,
+                amount_aablock=0,
                 amount_sysblock=0,
                 amount_wsys=0
             )
