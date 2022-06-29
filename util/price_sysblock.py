@@ -18,6 +18,9 @@ if NEVM_HOST_TYPE in ['http','https']:
 elif NEVM_HOST_TYPE in ['ws','wss']:
     provider_nevm = Web3(Web3.WebsocketProvider(f'{NEVM_HOST_TYPE}://{NEVM_HOST}:{NEVM_PORT}'))
     provider_nevm.middleware_onion.inject(geth_poa_middleware, layer=0)
+else:
+    provider_nevm = None
+
 with open("util/pegasys_router_abi.json", 'r') as file:
     PegasysRouterABI = json.load(file)
     
@@ -36,7 +39,7 @@ def get_price_pegasys(address1, address2):
 def get_price_sysblock():
 
     def price(reserveToken0, reserveToken1, token0Address, token1Address):
-
+            
         token0 = provider_nevm.eth.contract(address=provider_nevm.toChecksumAddress(token0Address), abi=ERC20ABI)
         token1 = provider_nevm.eth.contract(address=provider_nevm.toChecksumAddress(token1Address), abi=ERC20ABI)
 
@@ -51,6 +54,9 @@ def get_price_sysblock():
             price_token = (reserveToken0 / 10 ** token0Decimals) / (reserveToken1 / 10 ** token1Decimals)
 
         return price_token
+
+    if provider_nevm is None:
+        return None
 
     usdtContract = provider_nevm.eth.contract(address=provider_nevm.toChecksumAddress(usdtContract_address), abi=poolABI)
     sysblockContract = provider_nevm.eth.contract(address=provider_nevm.toChecksumAddress(sysblockContract_address), abi=poolABI)

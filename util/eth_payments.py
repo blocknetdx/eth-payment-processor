@@ -82,6 +82,13 @@ class Web3Helper:
         self.NEVM_PORT = os.environ.get('NEVM_PORT','')
         self.NEVM_HOST_TYPE = os.environ.get('NEVM_HOST_TYPE','')
 
+        self.w3_avax = None
+        self.w3_avax_accounts = None
+        self.w3 = None
+        self.w3_accounts = None
+        self.w3_nevm = None
+        self.w3_nevm_accounts = None
+        
         if self.AVAX_HOST_TYPE in ['http', 'https'] and self.AVAX_HOST!='':
             self.w3_avax = Web3(Web3.HTTPProvider(f'{self.AVAX_HOST_TYPE}://{self.AVAX_HOST}:{self.AVAX_PORT}/ext/bc/C/rpc'))
             self.w3_avax_accounts = Web3(Web3.HTTPProvider(f'{self.AVAX_HOST_TYPE}://{self.AVAX_HOST}:{self.AVAX_PORT}/ext/bc/C/rpc'))
@@ -201,6 +208,8 @@ class Web3Helper:
             self.nevm_accounts = accounts
 
     def get_eth_address(self):
+        if self.w3_accounts is None:
+            return [None, None, None]
         try:
             token = secrets.token_hex(32)
             acc = self.w3_accounts.eth.account.create(token)
@@ -208,10 +217,12 @@ class Web3Helper:
             privkey = acc.privateKey.hex()
             return [token, address, privkey]
         except Exception as e:
-            logging.critical("get eth address exception", exc_info=True)
+            logging.critical("get ETH address exception", exc_info=True)
             return [None, None, None]
 
     def get_avax_address(self):
+        if self.w3_avax is None:
+            return [None, None, None]
         try:
             token = secrets.token_hex(32)
             acc = self.w3_avax.eth.account.create(token)
@@ -219,10 +230,12 @@ class Web3Helper:
             privkey = acc.privateKey.hex()
             return [token, address, privkey]
         except Exception as e:
-            logging.critical("get avax address exception", exc_info=True)
+            logging.critical("get AVAX address exception", exc_info=True)
             return [None, None, None]
 
     def get_nevm_address(self):
+        if self.w3_nevm is None:
+            return [None, None, None]
         try:
             token = secrets.token_hex(32)
             acc = self.w3_nevm.eth.account.create(token)
@@ -230,7 +243,7 @@ class Web3Helper:
             privkey = acc.privateKey.hex()
             return [token, address, privkey]
         except Exception as e:
-            logging.critical("get nevm address exception", exc_info=True)
+            logging.critical("get NEVM address exception", exc_info=True)
             return [None, None, None]
 
     def check_aablock_balance(self):

@@ -18,6 +18,8 @@ if AVAX_HOST_TYPE in ['http','https']:
 elif AVAX_HOST_TYPE in ['ws','wss']:
     provider_avax = Web3(Web3.WebsocketProvider(f'{AVAX_HOST_TYPE}://{AVAX_HOST}:{AVAX_PORT}/ext/bc/C/rpc'))
     provider_avax.middleware_onion.inject(geth_poa_middleware, layer=0)
+else:
+    provider_avax = None
     
 usdtContract_address = '0x9ee0a4e21bd333a6bb2ab298194320b8daa26516'
 aablockContract_address = '0xfFc53c9d889B4C0bfC1ba7B9E253C615300d9fFD'
@@ -41,6 +43,9 @@ def get_price_aablock():
             price_token = (reserveToken0 / 10 ** token0Decimals) / (reserveToken1 / 10 ** token1Decimals)
 
         return price_token
+
+    if provider_avax is None:
+        return None
 
     usdtContract = provider_avax.eth.contract(address=provider_avax.toChecksumAddress(usdtContract_address), abi=poolABI)
     aablockContract = provider_avax.eth.contract(address=provider_avax.toChecksumAddress(aablockContract_address), abi=poolABI)

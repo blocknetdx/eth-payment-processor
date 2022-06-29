@@ -41,16 +41,21 @@ if ETH_HOST_TYPE in ['http','https']:
 elif ETH_HOST_TYPE in ['ws','wss']:
     w3_conn = Web3(Web3.WebsocketProvider(f'{ETH_HOST_TYPE}://{ETH_HOST}:{ETH_PORT}'))
     w3_conn.middleware_onion.inject(geth_poa_middleware, layer=0)
+else:
+    w3_conn = None
 with open("util/uniswap_router_abi.json", 'r') as file:
     UniswapRouterABI = json.load(file)
 
 
 def get_price(address1, address2):
-    router = w3_conn.eth.contract(address=UniswapRouterABI['contractAddress'], abi=UniswapRouterABI['abi'])
-    token = w3_conn.toWei(1, 'Ether')
+    if w3_conn is not None:
+        router = w3_conn.eth.contract(address=UniswapRouterABI['contractAddress'], abi=UniswapRouterABI['abi'])
+        token = w3_conn.toWei(1, 'Ether')
 
-    price = router.functions.getAmountsOut(token, [address1, address2]).call()
-    price = price[1] / (10 ** 2)
+        price = router.functions.getAmountsOut(token, [address1, address2]).call()
+        price = price[1] / (10 ** 2)
+    else:
+        price = None
     return price
 
 
@@ -63,7 +68,7 @@ def get_eth_amount(amount):
             eth_price = get_price(WETH,USDT)/(10**4)
             last_amount_update_time_eth = int(time.time())
     except Exception as e:
-        logging.critical('Geth eth price lookup failed with error:', exc_info=True)
+        logging.critical('ETH price lookup failed with error:', exc_info=True)
         return None
 
     if eth_price is None:
@@ -81,7 +86,7 @@ def get_ablock_amount(amount):
             ablock_price = get_price(aBlock, USDT)
             last_amount_update_time_ablock = int(time.time())
     except Exception as e:
-        logging.critical('Uniswap ablock price lookup failed with error:',exc_info=True)
+        logging.critical('Uniswap aBLOCK price lookup failed with error:',exc_info=True)
         return None
 
     if ablock_price is None:
@@ -99,7 +104,7 @@ def get_aablock_amount(amount):
             aablock_price = get_price_aablock()
             last_amount_update_time_aablock = int(time.time())
     except Exception as e:
-        logging.critical('Pangolin aablock price lookup failed with error:', exc_info=True)
+        logging.critical('Pangolin aaBLOCK price lookup failed with error:', exc_info=True)
         return None
 
     if aablock_price is None:
@@ -117,7 +122,7 @@ def get_sysblock_amount(amount):
             sysblock_price = get_price_sysblock()
             last_amount_update_time_sysblock = int(time.time())
     except Exception as e:
-        logging.critical('Pegasys sysblock price lookup failed with error:',exc_info=True)
+        logging.critical('Pegasys sysBLOCK price lookup failed with error:',exc_info=True)
         return None
 
     if sysblock_price is None:

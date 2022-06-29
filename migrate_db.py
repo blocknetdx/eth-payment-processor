@@ -39,6 +39,17 @@ def add_column(table, name, data_type):
 	except Exception as e:
 		print(f'ADD {table} {name} {data_type}\n{e}')
 
+def drop_column(table, name):
+	try:
+		conn = db.connect(host=host, database=database, user=user, password=password)
+		conn.autocommit = True
+		cursor = conn.cursor()
+		cursor.execute(f'ALTER TABLE {table} DROP COLUMN {name}')
+		conn.close()
+		print(f'DROP {table} - {name}')
+	except Exception as e:
+		print(f'DROP {table} {name}\n{e}')
+
 def change_type(table, name, data_type):
 	try:
 		conn = db.connect(host=host, database=database, user=user, password=password)
@@ -54,11 +65,22 @@ def change_type(table, name, data_type):
 if __name__ == '__main__':
 
 	rename_column('payment','address','eth_address')
+	rename_column('payment','tier1_expected_amount','tier1_expected_amount_eth')
+	rename_column('payment','tier2_expected_amount','tier2_expected_amount_eth')
+	rename_column('payment','amount','amount_eth')
 
+	rename_column('payment','tier1_expected_amount_sys','tier1_expected_amount_wsys')
+	rename_column('payment','tier2_expected_amount_sys','tier2_expected_amount_wsys')
+	rename_column('payment','amount_sys','amount_wsys')
+
+	drop_column('payment','tier1_expected_amount_sys')
+	drop_column('payment','tier2_expected_amount_sys')
+	drop_column('payment','amount_sys')
+    
 	not_required_column('payment','pending')
 	not_required_column('payment','eth_address')
-	not_required_column('payment','tier1_expected_amount')
-	not_required_column('payment','tier2_expected_amount')
+	not_required_column('payment','tier1_expected_amount_eth')
+	not_required_column('payment','tier2_expected_amount_eth')
 
 	change_type('project', 'api_token_count', 'bigint')
 	change_type('project', 'used_api_tokens', 'bigint')
@@ -77,18 +99,11 @@ if __name__ == '__main__':
 	add_column('payment','tier2_expected_amount_aablock', 'float8')
 	add_column('payment','tier1_expected_amount_sysblock', 'float8')
 	add_column('payment','tier2_expected_amount_sysblock', 'float8')
-	add_column('payment','tier1_expected_amount_sys', 'float8')
-	add_column('payment','tier2_expected_amount_sys', 'float8')
+	add_column('payment','tier1_expected_amount_wsys', 'float8')
+	add_column('payment','tier2_expected_amount_wsys', 'float8')
 	add_column('payment','amount_ablock', 'float8')
 	add_column('payment','amount_aablock', 'float8')
 	add_column('payment','amount_sysblock', 'float8')
-	add_column('payment','amount_sys', 'float8')
+	add_column('payment','amount_wsys', 'float8')
 
-	rename_column('payment','tier1_expected_amount_sys', 'tier1_expected_amount_wsys')
-	rename_column('payment','tier2_expected_amount_sys', 'tier2_expected_amount_wsys')
-	rename_column('payment','amount_sys', 'amount_wsys')
-
-	add_column('payment','tier1_expected_amount_eth', 'float8')
-	add_column('payment','tier2_expected_amount_eth', 'float8')
-	add_column('payment','amount_eth', 'float8')
 
