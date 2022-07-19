@@ -17,7 +17,8 @@ default_api_calls_count = 6000000
 
 ablock_contract_address = Web3.toChecksumAddress('0xe692c8d72bd4ac7764090d54842a305546dd1de5')
 aablock_contract_address = Web3.toChecksumAddress('0xC931f61B1534EB21D8c11B24f3f5Ab2471d4aB50')
-sysblock_contract_address = Web3.toChecksumAddress('0xe18c200a70908c89ffa18c628fe1b83ac0065ea4')
+#sysblock_contract_address = Web3.toChecksumAddress('0xe18c200a70908c89ffa18c628fe1b83ac0065ea4')
+sysblock_contract_address = Web3.toChecksumAddress('0x1CcCA1cE62c62F7Be95d4A67722a8fDbed6EEcb4')
 
 with open("util/ablock_abi.json", "r") as file:
     abi = json.load(file)
@@ -268,7 +269,7 @@ class Web3Helper:
         paid = {}
         for contract_address in self.nevm_accounts:
             balance_contract = self.contract_sysblock.functions.balanceOf(Web3.toChecksumAddress(contract_address)).call()
-            amount_sysblock = float(Web3.fromWei(balance_contract, 'ether'))
+            amount_sysblock = float(Web3.fromWei(balance_contract*10**10, 'ether')) # sysBLOCK has only 8 decimals
             if amount_sysblock > 0:
                 paid[contract_address] = amount_sysblock
         return paid
