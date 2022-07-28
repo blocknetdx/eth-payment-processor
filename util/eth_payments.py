@@ -8,28 +8,32 @@ import secrets
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
 from database.models import Payment, db_session, commit
-from util import get_eth_amount, get_ablock_amount, get_aablock_amount, min_payment_amount_tier1, \
-                 min_payment_amount_tier2, discount_ablock, discount_aablock
+from util import get_eth_amount, get_wsys_amount, \
+                 get_ablock_amount, get_aablock_amount, get_sysblock_amount, \
+                 min_payment_amount_tier1, min_payment_amount_tier2, \
+                 discount_ablock, discount_aablock, discount_sysblock 
 
 default_api_calls_count = 6000000
 
 ablock_contract_address = Web3.toChecksumAddress('0xe692c8d72bd4ac7764090d54842a305546dd1de5')
 aablock_contract_address = Web3.toChecksumAddress('0xC931f61B1534EB21D8c11B24f3f5Ab2471d4aB50')
+#sysblock_contract_address = Web3.toChecksumAddress('0xe18c200a70908c89ffa18c628fe1b83ac0065ea4')
+sysblock_contract_address = Web3.toChecksumAddress('0x1CcCA1cE62c62F7Be95d4A67722a8fDbed6EEcb4')
 
 with open("util/ablock_abi.json", "r") as file:
     abi = json.load(file)
 
 
-def calc_api_calls_tiers(payment_amount_wei, tier1_eth_amount_wei, tier2_eth_amount_wei,
+def calc_api_calls_tiers(payment_amount_wei, tier1_amount_wei, tier2_amount_wei,
                          archival_mode: bool, def_api_calls_count: int) -> int:
     """Calculates the number of api calls for the specified archival mode and tier
     amounts. The [default api call count] * [price multiplier] determines total paid
     api calls. [price multiplier] = [user payment in eth] / [tier required payment in eth]"""
-    if isinstance(tier1_eth_amount_wei, tuple):
-        tier1_eth_amount_wei = tier1_eth_amount_wei[0]
-    if isinstance(tier2_eth_amount_wei, tuple):
-        tier2_eth_amount_wei = tier2_eth_amount_wei[0]
-    tier_expected_amount = tier1_eth_amount_wei if not archival_mode else tier2_eth_amount_wei
+    if isinstance(tier1_amount_wei, tuple):
+        tier1_amount_wei = tier1_amount_wei[0]
+    if isinstance(tier2_amount_wei, tuple):
+        tier2_amount_wei = tier2_amount_wei[0]
+    tier_expected_amount = tier1_amount_wei if not archival_mode else tier2_amount_wei
     multiplier = float(payment_amount_wei) / float(tier_expected_amount)
     logging.info(f"Multiplier {multiplier}")
     api_calls = int(float(def_api_calls_count) * multiplier)
@@ -50,11 +54,22 @@ def calc_api_calls(payment_amount_wei, token, archival_mode: bool, def_api_calls
                                     def_api_calls_count)
 
     elif token == 'aablock':
-        tier1_amount = float(get_aablock_amount(min_payment_amount_tier1 * discount_aablock)),
-        tier2_amount = float(get_aablock_amount(min_payment_amount_tier2 * discount_aablock)),
+        tier1_amount = float(get_aablock_amount(min_payment_amount_tier1 * discount_aablock))
+        tier2_amount = float(get_aablock_amount(min_payment_amount_tier2 * discount_aablock))
         return calc_api_calls_tiers(payment_amount_wei, tier1_amount, tier2_amount, archival_mode,
                                     def_api_calls_count)
 
+    elif token == 'sysblock':
+        tier1_amount = float(get_sysblock_amount(min_payment_amount_tier1 * discount_sysblock))
+        tier2_amount = float(get_sysblock_amount(min_payment_amount_tier2 * discount_sysblock))
+        return calc_api_calls_tiers(payment_amount_wei, tier1_amount, tier2_amount, archival_mode,
+                                    def_api_calls_count)
+
+    elif token == 'wsys':
+        tier1_amount = float(get_wsys_amount(min_payment_amount_tier1))
+        tier2_amount = float(get_wsys_amount(min_payment_amount_tier2))
+        return calc_api_calls_tiers(payment_amount_wei, tier1_amount, tier2_amount, archival_mode,
+                                    def_api_calls_count)
 
 class Web3Helper:
     def __init__(self):
@@ -64,7 +79,17 @@ class Web3Helper:
         self.ETH_HOST = os.environ.get('ETH_HOST', '')
         self.ETH_PORT = os.environ.get('ETH_PORT', '')
         self.ETH_HOST_TYPE = os.environ.get('ETH_HOST_TYPE','')
+        self.NEVM_HOST = os.environ.get('NEVM_HOST','')
+        self.NEVM_PORT = os.environ.get('NEVM_PORT','')
+        self.NEVM_HOST_TYPE = os.environ.get('NEVM_HOST_TYPE','')
 
+        self.w3_avax = None
+        self.w3_avax_accounts = None
+        self.w3 = None
+        self.w3_accounts = None
+        self.w3_nevm = None
+        self.w3_nevm_accounts = None
+        
         if self.AVAX_HOST_TYPE in ['http', 'https'] and self.AVAX_HOST!='':
             self.w3_avax = Web3(Web3.HTTPProvider(f'{self.AVAX_HOST_TYPE}://{self.AVAX_HOST}:{self.AVAX_PORT}/ext/bc/C/rpc'))
             self.w3_avax_accounts = Web3(Web3.HTTPProvider(f'{self.AVAX_HOST_TYPE}://{self.AVAX_HOST}:{self.AVAX_PORT}/ext/bc/C/rpc'))
@@ -85,12 +110,25 @@ class Web3Helper:
             self.w3_accounts = Web3(Web3.WebsocketProvider(f'{self.ETH_HOST_TYPE}://{self.ETH_HOST}:{self.ETH_PORT}'))
             self.w3.middleware_onion.inject(geth_poa_middleware, layer=0)
             self.w3_accounts.middleware_onion.inject(geth_poa_middleware, layer=0)
+        if self.NEVM_HOST_TYPE in ['http','https'] and self.NEVM_HOST!='':
+            self.w3_nevm = Web3(Web3.HTTPProvider(f'{self.NEVM_HOST_TYPE}://{self.NEVM_HOST}:{self.NEVM_PORT}'))
+            self.w3_nevm_accounts = Web3(Web3.HTTPProvider(f'{self.NEVM_HOST_TYPE}://{self.NEVM_HOST}:{self.NEVM_PORT}'))
+            self.w3_nevm.middleware_onion.inject(geth_poa_middleware, layer=0)
+            self.w3_nevm_accounts.middleware_onion.inject(geth_poa_middleware, layer=0)
+        elif self.NEVM_HOST_TYPE in ['ws','wss'] and self.NEVM_HOST!='':
+            self.w3_nevm = Web3(Web3.WebsocketProvider(f'{self.NEVM_HOST_TYPE}://{self.NEVM_HOST}:{self.NEVM_PORT}'))
+            self.w3_nevm_accounts = Web3(Web3.WebsocketProvider(f'{self.NEVM_HOST_TYPE}://{self.NEVM_HOST}:{self.NEVM_PORT}'))
+            self.w3_nevm.middleware_onion.inject(geth_poa_middleware, layer=0)
+            self.w3_nevm_accounts.middleware_onion.inject(geth_poa_middleware, layer=0)
         if self.ETH_HOST_TYPE!='':
             self.contract_ablock = self.w3.eth.contract(address=ablock_contract_address, abi=abi)
         if self.AVAX_HOST_TYPE!='':
             self.contract_aablock = self.w3_avax.eth.contract(address=aablock_contract_address, abi=abi)
+        if self.NEVM_HOST_TYPE!='':
+            self.contract_sysblock = self.w3_nevm.eth.contract(address=sysblock_contract_address, abi=abi)
         self.eth_accounts = []
         self.avax_accounts = []
+        self.nevm_accounts = []
 
     def eth_start(self):
         logging.info('ETH loop starting in 2s')
@@ -130,6 +168,25 @@ class Web3Helper:
                 self.__init__()
                 time.sleep(30)
 
+    def nevm_start(self):
+        logging.info('NEVM loop starting in 2s')
+        time.sleep(2)
+        while True:
+            try:
+                if self.NEVM_HOST_TYPE!='':
+                    while True:
+                        try:
+                            self.fetch_nevm_accounts()
+                            self.handle_nevm_event()
+                        except Exception as e:
+                            logging.critical('error handling nevm', exc_info=True)
+                        logging.info('processing nevm projects in 30s...')
+                        time.sleep(30)
+            except Exception as e:
+                logging.info('NEVM node error....Retying in 30s')
+                self.__init__()
+                time.sleep(30)
+
     @db_session()
     def fetch_eth_accounts(self):
         query = Payment.select(lambda payment: payment.start_time is not None and payment.eth_address is not None and payment.eth_address!='')
@@ -144,7 +201,16 @@ class Web3Helper:
         if len(accounts) > 0:
             self.avax_accounts = accounts
 
+    @db_session()
+    def fetch_nevm_accounts(self):
+        query = Payment.select(lambda payment: payment.start_time is not None and payment.nevm_address is not None and payment.nevm_address!='')
+        accounts = [payment.nevm_address for payment in query]
+        if len(accounts) > 0:
+            self.nevm_accounts = accounts
+
     def get_eth_address(self):
+        if self.w3_accounts is None:
+            return [None, None, None]
         try:
             token = secrets.token_hex(32)
             acc = self.w3_accounts.eth.account.create(token)
@@ -152,10 +218,12 @@ class Web3Helper:
             privkey = acc.privateKey.hex()
             return [token, address, privkey]
         except Exception as e:
-            logging.critical("get eth address exception", exc_info=True)
+            logging.critical("get ETH address exception", exc_info=True)
             return [None, None, None]
 
     def get_avax_address(self):
+        if self.w3_avax is None:
+            return [None, None, None]
         try:
             token = secrets.token_hex(32)
             acc = self.w3_avax.eth.account.create(token)
@@ -163,7 +231,20 @@ class Web3Helper:
             privkey = acc.privateKey.hex()
             return [token, address, privkey]
         except Exception as e:
-            logging.critical("get avax address exception", exc_info=True)
+            logging.critical("get AVAX address exception", exc_info=True)
+            return [None, None, None]
+
+    def get_nevm_address(self):
+        if self.w3_nevm is None:
+            return [None, None, None]
+        try:
+            token = secrets.token_hex(32)
+            acc = self.w3_nevm.eth.account.create(token)
+            address = acc.address
+            privkey = acc.privateKey.hex()
+            return [token, address, privkey]
+        except Exception as e:
+            logging.critical("get NEVM address exception", exc_info=True)
             return [None, None, None]
 
     def check_aablock_balance(self):
@@ -184,6 +265,15 @@ class Web3Helper:
                 paid[contract_address] = amount_ablock
         return paid
 
+    def check_sysblock_balance(self):
+        paid = {}
+        for contract_address in self.nevm_accounts:
+            balance_contract = self.contract_sysblock.functions.balanceOf(Web3.toChecksumAddress(contract_address)).call()
+            amount_sysblock = float(Web3.fromWei(balance_contract*10**10, 'ether')) # sysBLOCK has only 8 decimals
+            if amount_sysblock > 0:
+                paid[contract_address] = amount_sysblock
+        return paid
+
     def check_eth_balance(self):
         paid = {}
         for address in self.eth_accounts:
@@ -192,10 +282,19 @@ class Web3Helper:
             if amount_eth > 0:
                 paid[address] = amount_eth
         return paid
-    
+
+    def check_wsys_balance(self):
+        paid = {}
+        for address in self.nevm_accounts:
+            balance = self.w3_nevm.eth.getBalance(Web3.toChecksumAddress(address))
+            amount_wsys = float(Web3.fromWei(balance, 'ether'))
+            if amount_wsys > 0:
+                paid[address] = amount_wsys
+        return paid    
+
     @db_session()
     def handle_eth_event(self):
-        logging.info('processing eth ablock projects')
+        logging.info('processing ETH/aBLOCK projects')
         ablock_accounts = self.check_ablock_balance()
         eth_accounts = self.check_eth_balance()
 
@@ -203,28 +302,28 @@ class Web3Helper:
             for to_address in eth_accounts:
                 payment_obj = Payment.get(eth_address=to_address)
                 value = eth_accounts[to_address]
-                if value >= payment_obj.tier1_expected_amount:
-                    logging.info('eth payment received for project: {} {} {}'.format(payment_obj.project.name,
+                if value >= payment_obj.tier1_expected_amount_eth:
+                    logging.info('ETH payment received for project: {} {} {}'.format(payment_obj.project.name,
                                                                                  to_address, value))
 
                     if payment_obj.pending:
                         # If initial payment offering has expired
-                        logging.info('eth processing payment for project: {} {} {}'.format(payment_obj.project.name,
+                        logging.info('ETH processing payment for project: {} {} {}'.format(payment_obj.project.name,
                                                          to_address, value))
-                        if datetime.datetime.now() >= payment_obj.start_time + datetime.timedelta(hours=12):
+                        if datetime.datetime.now() >= payment_obj.start_time + datetime.timedelta(hours=1):
                             payment_obj.project.archive_mode = False
                             payment_obj.project.api_token_count = calc_api_calls_tiers(value,
-                                                                                       payment_obj.tier1_expected_amount,
-                                                                                       payment_obj.tier2_expected_amount,
+                                                                                       payment_obj.tier1_expected_amount_eth,
+                                                                                       payment_obj.tier2_expected_amount_eth,
                                                                                        payment_obj.project.archive_mode,
                                                                                        default_api_calls_count/2)    
                         else:
                             # Non-expired payment calcs should use the db payment tiers
-                            payment_obj.project.archive_mode = value >= payment_obj.tier2_expected_amount
+                            payment_obj.project.archive_mode = value >= payment_obj.tier2_expected_amount_eth
                             # Note set the api calls here since first time payment (do not append)
                             payment_obj.project.api_token_count = calc_api_calls_tiers(value,
-                                                                                       payment_obj.tier1_expected_amount,
-                                                                                       payment_obj.tier2_expected_amount,
+                                                                                       payment_obj.tier1_expected_amount_eth,
+                                                                                       payment_obj.tier2_expected_amount_eth,
                                                                                        payment_obj.project.archive_mode,
                                                                                        default_api_calls_count)            
                         payment_obj.pending = False
@@ -236,11 +335,11 @@ class Web3Helper:
                                 or (payment_obj.project.api_token_count > 0 and payment_obj.project.used_api_tokens is None):
                             payment_obj.project.active = True
 
-                        payment_obj.amount = float(value)
+                        payment_obj.amount_eth = float(value)
 
                         payment_obj.project.expires = datetime.datetime.now() + datetime.timedelta(days=30)
                 else:
-                    logging.info('eth payment received for project too low: {} {} {}'.format(payment_obj.project.name,
+                    logging.info('ETH payment received for project too low: {} {} {}'.format(payment_obj.project.name,
                                                                                  to_address, value))
 
         if ablock_accounts:
@@ -248,12 +347,12 @@ class Web3Helper:
                 payment_obj = Payment.get(eth_address=to_address)
                 value = ablock_accounts[to_address]
                 if value >= payment_obj.tier1_expected_amount_ablock:
-                    logging.info('ablock payment received for project: {} {} {}'.format(payment_obj.project.name,
+                    logging.info('aBLOCK payment received for project: {} {} {}'.format(payment_obj.project.name,
                                                                                  to_address, value))
                     if payment_obj.pending:
-                        logging.info('ablock processing payment for project: {} {} {}'.format(payment_obj.project.name,
+                        logging.info('aBLOCK processing payment for project: {} {} {}'.format(payment_obj.project.name,
                                                          to_address, value))
-                        if datetime.datetime.now() >= payment_obj.start_time + datetime.timedelta(hours=12):
+                        if datetime.datetime.now() >= payment_obj.start_time + datetime.timedelta(hours=1):
                             payment_obj.project.archive_mode = False
                             payment_obj.project.api_token_count = calc_api_calls_tiers(value,
                                                                                        payment_obj.tier1_expected_amount_ablock,
@@ -278,12 +377,12 @@ class Web3Helper:
 
                         payment_obj.project.expires = datetime.datetime.now() + datetime.timedelta(days=30)
                 else:
-                    logging.info('ablock payment received for project too low: {} {} {}'.format(payment_obj.project.name,
+                    logging.info('aBLOCK payment received for project too low: {} {} {}'.format(payment_obj.project.name,
                                                                                  to_address, value))
 
     @db_session()
     def handle_avax_event(self):
-        logging.info('processing avax projects')
+        logging.info('processing aaBLOCK projects')
         aablock_accounts = self.check_aablock_balance()
 
         if aablock_accounts:
@@ -291,12 +390,12 @@ class Web3Helper:
                 payment_obj = Payment.get(avax_address=to_address)
                 value = aablock_accounts[to_address]
                 if value >= payment_obj.tier1_expected_amount_aablock:
-                    logging.info('aablock payment received for project: {} {} {}'.format(payment_obj.project.name,
+                    logging.info('aaBLOCK payment received for project: {} {} {}'.format(payment_obj.project.name,
                                                                                  to_address, value))
                     if payment_obj.pending:
-                        logging.info('aablock processing payment for project: {} {} {}'.format(payment_obj.project.name,
+                        logging.info('aaBLOCK processing payment for project: {} {} {}'.format(payment_obj.project.name,
                                                                                  to_address, value))
-                        if datetime.datetime.now() >= payment_obj.start_time + datetime.timedelta(hours=12):
+                        if datetime.datetime.now() >= payment_obj.start_time + datetime.timedelta(hours=1):
                             payment_obj.project.archive_mode = False
                             payment_obj.project.api_token_count = calc_api_calls_tiers(value,
                                                                                        payment_obj.tier1_expected_amount_aablock,
@@ -321,5 +420,93 @@ class Web3Helper:
 
                         payment_obj.project.expires = datetime.datetime.now() + datetime.timedelta(days=30)
                 else:
-                    logging.info('aablock payment received for project too low: {} {} {}'.format(payment_obj.project.name,
+                    logging.info('aaBLOCK payment received for project too low: {} {} {}'.format(payment_obj.project.name,
+                                                                                 to_address, value))
+
+    @db_session()
+    def handle_nevm_event(self):
+        logging.info('processing WSYS/sysBLOCK projects')
+        wsys_accounts = self.check_wsys_balance()
+        sysblock_accounts = self.check_sysblock_balance()
+
+        if wsys_accounts:
+            for to_address in wsys_accounts:
+                payment_obj = Payment.get(nevm_address=to_address)
+                value = wsys_accounts[to_address]
+                if value >= payment_obj.tier1_expected_amount_wsys:
+                    logging.info('WSYS payment received for project: {} {} {}'.format(payment_obj.project.name,
+                                                                                 to_address, value))
+
+                    if payment_obj.pending:
+                        # If initial payment offering has expired
+                        logging.info('WSYS processing payment for project: {} {} {}'.format(payment_obj.project.name,
+                                                         to_address, value))
+                        if datetime.datetime.now() >= payment_obj.start_time + datetime.timedelta(hours=1):
+                            payment_obj.project.archive_mode = False
+                            payment_obj.project.api_token_count = calc_api_calls_tiers(value,
+                                                                                       payment_obj.tier1_expected_amount_wsys,
+                                                                                       payment_obj.tier2_expected_amount_wsys,
+                                                                                       payment_obj.project.archive_mode,
+                                                                                       default_api_calls_count/2)    
+                        else:
+                            # Non-expired payment calcs should use the db payment tiers
+                            payment_obj.project.archive_mode = value >= payment_obj.tier2_expected_amount_wsys
+                            # Note set the api calls here since first time payment (do not append)
+                            payment_obj.project.api_token_count = calc_api_calls_tiers(value,
+                                                                                       payment_obj.tier1_expected_amount_wsys,
+                                                                                       payment_obj.tier2_expected_amount_wsys,
+                                                                                       payment_obj.project.archive_mode,
+                                                                                       default_api_calls_count)            
+                        payment_obj.pending = False
+
+                        # If the user has overage don't allow them to use the api until they've
+                        # paid for the overage. Only set the project to active if they have
+                        # more api tokens available than used api tokens.
+                        if payment_obj.project.api_token_count > payment_obj.project.used_api_tokens \
+                                or (payment_obj.project.api_token_count > 0 and payment_obj.project.used_api_tokens is None):
+                            payment_obj.project.active = True
+
+                        payment_obj.amount_wsys = float(value)
+
+                        payment_obj.project.expires = datetime.datetime.now() + datetime.timedelta(days=30)
+                else:
+                    logging.info('WSYS payment received for project too low: {} {} {}'.format(payment_obj.project.name,
+                                                                                 to_address, value))
+
+        if sysblock_accounts:
+            for to_address in sysblock_accounts:
+                payment_obj = Payment.get(nevm_address=to_address)
+                value = sysblock_accounts[to_address]
+                if value >= payment_obj.tier1_expected_amount_sysblock:
+                    logging.info('sysBLOCK payment received for project: {} {} {}'.format(payment_obj.project.name,
+                                                                                 to_address, value))
+                    if payment_obj.pending:
+                        logging.info('sysBLOCK processing payment for project: {} {} {}'.format(payment_obj.project.name,
+                                                                                 to_address, value))
+                        if datetime.datetime.now() >= payment_obj.start_time + datetime.timedelta(hours=1):
+                            payment_obj.project.archive_mode = False
+                            payment_obj.project.api_token_count = calc_api_calls_tiers(value,
+                                                                                       payment_obj.tier1_expected_amount_sysblock,
+                                                                                       payment_obj.tier2_expected_amount_sysblock,
+                                                                                       payment_obj.project.archive_mode,
+                                                                                       default_api_calls_count/2)
+                        else:
+                            payment_obj.project.archive_mode = value >= payment_obj.tier2_expected_amount_sysblock
+                            payment_obj.project.api_token_count = calc_api_calls_tiers(value,
+                                                                                       payment_obj.tier1_expected_amount_sysblock,
+                                                                                       payment_obj.tier2_expected_amount_sysblock,
+                                                                                       payment_obj.project.archive_mode,
+                                                                                       default_api_calls_count)
+
+                        payment_obj.pending = False
+
+                        if payment_obj.project.api_token_count > payment_obj.project.used_api_tokens \
+                                or (payment_obj.project.api_token_count > 0 and payment_obj.project.used_api_tokens is None):
+                            payment_obj.project.active = True
+
+                        payment_obj.amount_sysblock = float(value)
+
+                        payment_obj.project.expires = datetime.datetime.now() + datetime.timedelta(days=30)
+                else:
+                    logging.info('sysBLOCK payment received for project too low: {} {} {}'.format(payment_obj.project.name,
                                                                                  to_address, value))

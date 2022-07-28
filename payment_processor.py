@@ -10,8 +10,8 @@ from threading import Thread
 from flask import Flask, request, Response, g, jsonify
 from database.models import commit, db_session, select, Project, Payment
 from util.eth_payments import Web3Helper
-from util import get_eth_amount, get_ablock_amount, get_aablock_amount, \
-                 min_payment_amount_tier1, min_payment_amount_tier2, discount_ablock, discount_aablock
+from util import get_eth_amount, get_wsys_amount, get_ablock_amount, get_aablock_amount, get_sysblock_amount, \
+                 min_payment_amount_tier1, min_payment_amount_tier2, discount_ablock, discount_aablock, discount_sysblock
 
 LOGLEVEL = os.environ.get('LOGLEVEL', 'INFO').upper()
 logging.basicConfig(level=LOGLEVEL, stream=sys.stdout,
@@ -50,8 +50,10 @@ def on_startup():
     t1.start()
     t2 = Thread(target=web3_helper.avax_start, daemon=True)
     t2.start()
-    t3 = Thread(target=update_api_counts, daemon=True)
+    t3 = Thread(target=web3_helper.nevm_start, daemon=True)
     t3.start()
+    t4 = Thread(target=update_api_counts, daemon=True)
+    t4.start()
 
 class FlaskWithStartUp(Flask):
     def run(self, host=None, port=None, debug=None, load_dotenv=True, **options):
@@ -69,22 +71,29 @@ app = FlaskWithStartUp(__name__)
 def create_project():
     logging.info('Creating new pending project')
     # fetch eth
-    tier1_expected_amount = get_eth_amount(min_payment_amount_tier1)
-    tier2_expected_amount = get_eth_amount(min_payment_amount_tier2)
+    tier1_expected_amount_eth = get_eth_amount(min_payment_amount_tier1)
+    tier2_expected_amount_eth = get_eth_amount(min_payment_amount_tier2)
     tier1_expected_amount_ablock = get_ablock_amount(min_payment_amount_tier1 * discount_ablock)
     tier2_expected_amount_ablock = get_ablock_amount(min_payment_amount_tier2 * discount_ablock)
     tier1_expected_amount_aablock = get_aablock_amount(min_payment_amount_tier1 * discount_aablock)
     tier2_expected_amount_aablock = get_aablock_amount(min_payment_amount_tier2 * discount_aablock)
-
+    tier1_expected_amount_sysblock = get_sysblock_amount(min_payment_amount_tier1 * discount_sysblock)
+    tier2_expected_amount_sysblock = get_sysblock_amount(min_payment_amount_tier2 * discount_sysblock)
+    tier1_expected_amount_wsys = get_wsys_amount(min_payment_amount_tier1)
+    tier2_expected_amount_wsys = get_wsys_amount(min_payment_amount_tier2)
     amounts = {
-    "eth_tier1":tier1_expected_amount,
-    "eth_tier2":tier2_expected_amount,
+    "eth_tier1":tier1_expected_amount_eth,
+    "eth_tier2":tier2_expected_amount_eth,
     "ablock_tier1":tier1_expected_amount_ablock,
     "ablock_tier2":tier2_expected_amount_ablock,
     "aablock_tier1":tier1_expected_amount_aablock,
-    "aablock_tier2":tier2_expected_amount_aablock
+    "aablock_tier2":tier2_expected_amount_aablock,
+    "sysblock_tier1":tier1_expected_amount_sysblock,
+    "sysblock_tier2":tier2_expected_amount_sysblock,
+    "wsys_tier1":tier1_expected_amount_wsys,
+    "wsys_tier2":tier2_expected_amount_wsys
     }
-    if list(amounts.values()).count(None)>=5:
+    if list(amounts.values()).count(None)>=9:
         context = {
             'error': 'Internal Server Error: Failed to get at least 2 amounts, please try again',
             'amounts':amounts
@@ -93,18 +102,19 @@ def create_project():
 
     eth_token, eth_address, eth_privkey = web3_helper.get_eth_address()
     avax_token, avax_address, avax_privkey = web3_helper.get_avax_address()
+    nevm_token, nevm_address, nevm_privkey = web3_helper.get_nevm_address()
     project_name = str(uuid.uuid4())
     start_time = datetime.datetime.now()
-    payment_expires = start_time + datetime.timedelta(hours=3, minutes=30)
+    payment_expires = start_time + datetime.timedelta(hours=1)
     api_key = secrets.token_urlsafe(32)
 
     logging.info(f'Creating project {project_name} with payment amounts: {amounts}')
 
-    if tier1_expected_amount is None and tier2_expected_amount is None and tier1_expected_amount_ablock is None and tier2_expected_amount_ablock is None:
+    if tier1_expected_amount_eth is None and tier2_expected_amount_eth is None and tier1_expected_amount_ablock is None and tier2_expected_amount_ablock is None:
         eth_address = None
 
     try:
-        if eth_address is None and avax_address is None:
+        if eth_address is None and avax_address is None and nevm_address is None:
             context = {
                 'error': 'Internal Server Error: Failed to get at least 1 payment address, please try again'
             }
@@ -127,16 +137,26 @@ def create_project():
                 avax_token=avax_token if avax_token!=None else '',
                 avax_address=avax_address if avax_address!=None else '',
                 avax_privkey=avax_privkey if avax_privkey!=None else '',
+                nevm_token=nevm_token if nevm_token!=None else '',
+                nevm_address=nevm_address if nevm_address!=None else '',
+                nevm_privkey=nevm_privkey if nevm_privkey!=None else '',
                 start_time=start_time,
                 project=project,
-                tier1_expected_amount=tier1_expected_amount if tier1_expected_amount!=None else -1,
-                tier2_expected_amount=tier2_expected_amount if tier2_expected_amount!=None else -1,
+                tier1_expected_amount_eth=tier1_expected_amount_eth if tier1_expected_amount_eth!=None else -1,
+                tier2_expected_amount_eth=tier2_expected_amount_eth if tier2_expected_amount_eth!=None else -1,
                 tier1_expected_amount_ablock=tier1_expected_amount_ablock if tier1_expected_amount_ablock!=None else -1,
                 tier2_expected_amount_ablock=tier2_expected_amount_ablock if tier2_expected_amount_ablock!=None else -1,
                 tier1_expected_amount_aablock=tier1_expected_amount_aablock if tier1_expected_amount_aablock!=None else -1,
                 tier2_expected_amount_aablock=tier2_expected_amount_aablock if tier2_expected_amount_aablock!=None else -1,
+                tier1_expected_amount_sysblock=tier1_expected_amount_sysblock if tier1_expected_amount_sysblock!=None else -1,
+                tier2_expected_amount_sysblock=tier2_expected_amount_sysblock if tier2_expected_amount_sysblock!=None else -1,
+                tier1_expected_amount_wsys=tier1_expected_amount_wsys if tier1_expected_amount_wsys!=None else -1,
+                tier2_expected_amount_wsys=tier2_expected_amount_wsys if tier2_expected_amount_wsys!=None else -1,
+                amount_eth=0,
+                amount_ablock=0,
                 amount_aablock=0,
-                amount_ablock=0
+                amount_sysblock=0,
+                amount_wsys=0
             )
 
             commit()
@@ -155,12 +175,17 @@ def create_project():
             'api_key': api_key,
             'payment_eth_address': eth_address,
             'payment_avax_address': avax_address,
-            'payment_amount_tier1_eth': tier1_expected_amount,
-            'payment_amount_tier2_eth': tier2_expected_amount,
+            'payment_nevm_address': nevm_address,
+            'payment_amount_tier1_eth': tier1_expected_amount_eth,
+            'payment_amount_tier2_eth': tier2_expected_amount_eth,
             'payment_amount_tier1_ablock': tier1_expected_amount_ablock,
             'payment_amount_tier2_ablock': tier2_expected_amount_ablock,
             'payment_amount_tier1_aablock': tier1_expected_amount_aablock,
             'payment_amount_tier2_aablock': tier2_expected_amount_aablock,
+            'payment_amount_tier1_sysblock': tier1_expected_amount_sysblock,
+            'payment_amount_tier2_sysblock': tier2_expected_amount_sysblock,
+            'payment_amount_tier1_wsys': tier1_expected_amount_wsys,
+            'payment_amount_tier2_wsys': tier2_expected_amount_wsys,
             'expiry_time': payment_expires.strftime("%Y-%m-%d %H:%M:%S EST")
         }
     }
