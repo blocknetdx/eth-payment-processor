@@ -105,5 +105,6 @@ if __name__ == '__main__':
 	add_column('payment','amount_aablock', 'float8')
 	add_column('payment','amount_sysblock', 'float8')
 	add_column('payment','amount_wsys', 'float8')
+	add_column('project','user_cancelled', 'bool')
 
 

@@ -15,6 +15,7 @@ class Project(db.Entity):
     payments = Set(lambda: Payment, reverse='project')
 
     active = Required(bool, sql_default=False)
+    user_cancelled = Required(bool, sql_default=False)
 
 
 class Payment(db.Entity):

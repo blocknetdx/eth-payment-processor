@@ -126,7 +126,8 @@ def create_project():
                 api_key=api_key,
                 api_token_count=6000000,
                 used_api_tokens=0,
-                active=False
+                active=False,
+                user_cancelled=False
             )
 
             payment = Payment(
@@ -186,7 +187,7 @@ def create_project():
             'payment_amount_tier2_sysblock': tier2_expected_amount_sysblock,
             'payment_amount_tier1_wsys': tier1_expected_amount_wsys,
             'payment_amount_tier2_wsys': tier2_expected_amount_wsys,
-            'expiry_time': payment_expires.strftime("%Y-%m-%d %H:%M:%S EST")
+            'expiry_time': payment_expires.strftime("%Y-%m-%d %H:%M:%S UTC")
         }
     }
 
@@ -195,30 +196,29 @@ def create_project():
     return Response(response=json.dumps(context))
 
 
-@app.route("/list_projects", methods=['GET'])
-def list_projects():
-    results = []
-    try:
-        with db_session:
-            query = select(p for p in Project)
-
-            results = [{
-                'name': p.name,
-                'api_token_count': p.api_token_count,
-                'used_api_tokens': p.used_api_tokens,
-                'expires': str(p.expires),
-                'active': p.active,
-            } for p in query]
-    except Exception as e:
-        logging.error(e)
-
-    context = {
-        'result': results,
-        'error': 0
-    }
-
-    return Response(response=json.dumps(context))
-
+#@app.route("/list_projects", methods=['GET'])
+#def list_projects():
+#    results = []
+#    try:
+#        with db_session:
+#            query = select(p for p in Project)
+#
+#            results = [{
+#                'name': p.name,
+#                'api_token_count': p.api_token_count,
+#                'used_api_tokens': p.used_api_tokens,
+#                'expires': str(p.expires),
+#                'active': p.active,
+#            } for p in query]
+#    except Exception as e:
+#        logging.error(e)
+#
+#    context = {
+#        'result': results,
+#        'error': 0
+#    }
+#
+#    return Response(response=json.dumps(context))
 
 @app.route("/<project_id>/api_count", methods=['POST'])
 def api_count_handler(project_id):
