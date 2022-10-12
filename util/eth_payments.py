@@ -131,61 +131,43 @@ class Web3Helper:
         self.nevm_accounts = []
 
     def eth_start(self):
+        if self.ETH_HOST_TYPE=='': return # this saves CPU cycle
         logging.info('ETH loop starting in 2s')
         time.sleep(2)
         while True:
-            try:    
-                if self.ETH_HOST_TYPE!='':
-                    while True:
-                        try:
-                            self.fetch_eth_accounts()
-                            self.handle_eth_event()
-                        except Exception as e:
-                            logging.critical('error handling eth', exc_info=True)
-                        logging.info('processing eth projects in 30s...')
-                        time.sleep(30)
+            try:
+                self.fetch_eth_accounts()
+                self.handle_eth_event()
             except Exception as e:
-                logging.info('ETH node error....Retying in 30s')
-                self.__init__()
-                time.sleep(30)
+                logging.critical('error handling eth', exc_info=True)
+            logging.info('processing eth projects in 30s...')
+            time.sleep(30)
 
     def avax_start(self):
+        if self.AVAX_HOST_TYPE=='': return # this saves CPU cycle
         logging.info('AVAX loop starting in 2s')
         time.sleep(2)
         while True:
             try:
-                if self.AVAX_HOST_TYPE!='':
-                    while True:
-                        try:
-                            self.fetch_avax_accounts()
-                            self.handle_avax_event()
-                        except Exception as e:
-                            logging.critical('error handling avax', exc_info=True)
-                        logging.info('processing avax projects in 30s...')
-                        time.sleep(30)
+                self.fetch_avax_accounts()
+                self.handle_avax_event()
             except Exception as e:
-                logging.info('AVAX node error....Retying in 30s')
-                self.__init__()
-                time.sleep(30)
+                logging.critical('error handling avax', exc_info=True)
+            logging.info('processing avax projects in 30s...')
+            time.sleep(30)
 
     def nevm_start(self):
+        if self.NEVM_HOST_TYPE=='': return # this saves CPU cycle
         logging.info('NEVM loop starting in 2s')
         time.sleep(2)
         while True:
             try:
-                if self.NEVM_HOST_TYPE!='':
-                    while True:
-                        try:
-                            self.fetch_nevm_accounts()
-                            self.handle_nevm_event()
-                        except Exception as e:
-                            logging.critical('error handling nevm', exc_info=True)
-                        logging.info('processing nevm projects in 30s...')
-                        time.sleep(30)
+                self.fetch_nevm_accounts()
+                self.handle_nevm_event()
             except Exception as e:
-                logging.info('NEVM node error....Retying in 30s')
-                self.__init__()
-                time.sleep(30)
+                logging.critical('error handling nevm', exc_info=True)
+            logging.info('processing nevm projects in 30s...')
+            time.sleep(30)
 
     @db_session()
     def fetch_eth_accounts(self):
