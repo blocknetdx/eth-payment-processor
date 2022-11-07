@@ -11,7 +11,8 @@ from flask import Flask, request, Response, g, jsonify
 from database.models import commit, db_session, select, Project, Payment
 from util.eth_payments import Web3Helper
 from util import get_eth_amount, get_wsys_amount, get_ablock_amount, get_aablock_amount, get_sysblock_amount, \
-                 min_payment_amount_tier1, min_payment_amount_tier2, discount_ablock, discount_aablock, discount_sysblock
+                 min_payment_amount_tier1, min_payment_amount_tier2, min_payment_amount_xquery, discount_ablock, discount_aablock, discount_sysblock, \
+                 min_api_calls, coin_names, quote_valid_hours
 
 LOGLEVEL = os.environ.get('LOGLEVEL', 'INFO').upper()
 logging.basicConfig(level=LOGLEVEL, stream=sys.stdout,
@@ -46,14 +47,25 @@ def update_api_counts():
         time.sleep(5)
 
 def on_startup():
-    t1 = Thread(target=web3_helper.eth_start, daemon=True)
-    t1.start()
-    t2 = Thread(target=web3_helper.avax_start, daemon=True)
-    t2.start()
-    t3 = Thread(target=web3_helper.nevm_start, daemon=True)
-    t3.start()
-    t4 = Thread(target=update_api_counts, daemon=True)
-    t4.start()
+    evm_threads = {}
+    for evm in coin_names:
+        evm_threads[evm] = Thread(target=web3_helper.evm_start(evm), daemon=True)
+        evm_threads[evm].start()
+
+def get_min_amounts(auto_activate, xquery_bool, archival_mode_bool, amounts):
+
+    min_amount = {}
+    for coin_name in [coin_names[x][y] for x in coin_names for y in [True, False]]
+        if auto_activate:
+            min_amount[coin_name] = 0
+        elif xquery_bool:
+            min_amount[coin_name] = amounts[f'xquery_min_amount_{coin_name}']
+        elif archival_mode_bool:
+            min_amount[coin_name] = amounts[f'tier2_min_amount_{coin_name}']
+        else:
+            min_amount[coin_name] = amounts[f'tier1_min_amount_{coin_name}']
+
+    return min_amount
 
 class FlaskWithStartUp(Flask):
     def run(self, host=None, port=None, debug=None, load_dotenv=True, **options):
@@ -67,134 +79,207 @@ app = FlaskWithStartUp(__name__)
 
 
 
-@app.route("/create_project", methods=['GET'])
-def create_project():
-    logging.info('Creating new pending project')
-    # fetch eth
-    tier1_expected_amount_eth = get_eth_amount(min_payment_amount_tier1)
-    tier2_expected_amount_eth = get_eth_amount(min_payment_amount_tier2)
-    tier1_expected_amount_ablock = get_ablock_amount(min_payment_amount_tier1 * discount_ablock)
-    tier2_expected_amount_ablock = get_ablock_amount(min_payment_amount_tier2 * discount_ablock)
-    tier1_expected_amount_aablock = get_aablock_amount(min_payment_amount_tier1 * discount_aablock)
-    tier2_expected_amount_aablock = get_aablock_amount(min_payment_amount_tier2 * discount_aablock)
-    tier1_expected_amount_sysblock = get_sysblock_amount(min_payment_amount_tier1 * discount_sysblock)
-    tier2_expected_amount_sysblock = get_sysblock_amount(min_payment_amount_tier2 * discount_sysblock)
-    tier1_expected_amount_wsys = get_wsys_amount(min_payment_amount_tier1)
-    tier2_expected_amount_wsys = get_wsys_amount(min_payment_amount_tier2)
-    amounts = {
-    "eth_tier1":tier1_expected_amount_eth,
-    "eth_tier2":tier2_expected_amount_eth,
-    "ablock_tier1":tier1_expected_amount_ablock,
-    "ablock_tier2":tier2_expected_amount_ablock,
-    "aablock_tier1":tier1_expected_amount_aablock,
-    "aablock_tier2":tier2_expected_amount_aablock,
-    "sysblock_tier1":tier1_expected_amount_sysblock,
-    "sysblock_tier2":tier2_expected_amount_sysblock,
-    "wsys_tier1":tier1_expected_amount_wsys,
-    "wsys_tier2":tier2_expected_amount_wsys
-    }
-    if list(amounts.values()).count(None)>=9:
+@app.route("/create_project", methods=['POST'])
+@app.route("/extend_project/<project_id>", methods=['POST'])
+def create_or_extend_project(project_id=None):
+
+    # fetch min payment amounts
+    amounts = {}
+    for evm in coin_names:
+        for native_block_ in [True, False]
+            discount = eval(f'discount_{coin_names[evm][native_block_]}') if not native_block_ else 1:
+            amounts[f'tier1_min_amount_{coin_names[evm][native_block_]}'] = eval(f'get_{coin_names[evm][native_block_]}_amount(min_payment_amount_tier1*discount)')
+            amounts[f'tier2_min_amount_{coin_names[evm][native_block_]}'] = eval(f'get_{coin_names[evm][native_block_]}_amount(min_payment_amount_tier2*discount)')
+            amounts[f'xquery_min_amount_{coin_names[evm][native_block_]}'] = eval(f'get_{coin_names[evm][native_block_]}_amount(min_payment_amount_xquery*discount)')
+
+    if len(amounts) - list(amounts.values()).count(None) < 1:
         context = {
-            'error': 'Internal Server Error: Failed to get at least 2 amounts, please try again',
+            'error': 'Internal Server Error: Failed to get at least 1 payment amount, please try again',
             'amounts':amounts
         }
         return Response(response=json.dumps(context))
 
-    eth_token, eth_address, eth_privkey = web3_helper.get_eth_address()
-    avax_token, avax_address, avax_privkey = web3_helper.get_avax_address()
-    nevm_token, nevm_address, nevm_privkey = web3_helper.get_nevm_address()
-    project_name = str(uuid.uuid4())
-    start_time = datetime.datetime.now()
-    payment_expires = start_time + datetime.timedelta(hours=1)
-    api_key = secrets.token_urlsafe(32)
+     # handle create_project call
+    if 'create_project' in request.base_url:
+        logging.info('Creating new pending project')
+        request_json = request.get_json()
+        logging.info(request_json)
+        xquery_bool = True
+        hydra_bool = False
+        archive_mode_bool = False
+        if request_json:
+            lc_keys_request_json = dict((k.lower(), v) for k, v in request_json[0].items())
+            if 'hydra' in lc_keys_request_json.keys() and lc_keys_request_json['hydra'].lower() == 'true':
+                if 'xquery' in lc_keys_request_json.keys() and lc_keys_request_json['xquery'].lower() == 'true':
+                    context = {
+                        'error': 'A single project is not (yet) allowed to be used for both XQuery and Hydra.'
+                    }
+                    return Response(response=json.dumps(context))
+                xquery_bool = False
+                hydra_bool = True
+                archive_mode_bool = 'tier' in lc_keys_request_json.keys() and lc_keys_request_json['tier'] == 2
 
-    logging.info(f'Creating project {project_name} with payment amounts: {amounts}')
+        # automatically activate a newly created project if SNode operator is charging 0 (i.e. offering free service)
+        auto_activate = min_payment_amount_xquery == 0 if xquery_bool \
+                else min_payment_amount_tier2 == 0 if archive_mode_bool \
+                else min_payment_amount_tier1 == 0
 
-    if tier1_expected_amount_eth is None and tier2_expected_amount_eth is None and tier1_expected_amount_ablock is None and tier2_expected_amount_ablock is None:
-        eth_address = None
+        # Fetch min amounts to be paid to activate a project
+        min_amount = get_min_amounts(auto_activate, xquery_bool, archival_mode_bool, amounts)
 
-    try:
+        eth_token, eth_address, eth_privkey = web3_helper.get_evm_address(eth)
+        avax_token, avax_address, avax_privkey = web3_helper.get_evm_address(avax)
+        nevm_token, nevm_address, nevm_privkey = web3_helper.get_evm_address(nevm)
+        project_name = str(uuid.uuid4())
+        api_key = secrets.token_urlsafe(32)
+
+        logging.info(f'Creating project {project_name} with payment amounts: {amounts}')
+
         if eth_address is None and avax_address is None and nevm_address is None:
             context = {
                 'error': 'Internal Server Error: Failed to get at least 1 payment address, please try again'
             }
             return Response(response=json.dumps(context))
 
+        try:
+            with db_session:
+                project = Project(
+                    name=project_name,
+                    api_key=api_key,
+                    api_token_count=10000 if auto_activate else 0, # keeps track of total api tokens awarded to client
+                    used_api_tokens=0, # keeps track of total api tokens used by client
+                    active=auto_activate, # keeps track of whether project is currently active
+                    activated=auto_activate, # keeps track of whether project was ever activated
+                    user_cancelled=False, # to be used later when payment channels are in place to track if project cancelled by user
+                    hydra=hydra_bool, # True if this project allows Hydra (/xrs/evm_passthrough) access
+                    xquery=xquery_bool, # True if this project allows XQuery (/xrs/xquery) access
+                    archive_mode=archive_mode_bool  # True if this project allows Hydra (/xrs/evm_passthrough) access to all ETH blocks, not just most recent 128 blocks
+                )
+
+                payment = Payment(
+                    pending=not auto_activate,
+                    eth_token=eth_token if eth_token!=None else '',
+                    eth_address=eth_address if eth_address!=None and not auto_activate else '',
+                    eth_privkey=eth_privkey if eth_privkey!=None else '',
+                    avax_token=avax_token if avax_token!=None else '',
+                    avax_address=avax_address if avax_address!=None and not auto_activate else '',
+                    avax_privkey=avax_privkey if avax_privkey!=None else '',
+                    nevm_token=nevm_token if nevm_token!=None else '',
+                    nevm_address=nevm_address if nevm_address!=None and not auto_activate else '',
+                    nevm_privkey=nevm_privkey if nevm_privkey!=None else '',
+                    quote_start_time=datetime.datetime.now(),
+                    project=project,
+                    min_amount_eth = min_amount['eth'],
+                    min_amount_ablock = min_amount['ablock'],
+                    min_amount_avax = min_amount['avax'],
+                    min_amount_aablock = min_amount['aablock'],
+                    min_amount_wsys = min_amount['wsys'],
+                    min_amount_sysblock = min_amount['sysblock'],
+                    amount_eth=0,
+                    amount_ablock=0,
+                    amount_avax=0,
+                    amount_aablock=0,
+                    amount_wsys=0,
+                    amount_sysblock=0
+                )
+                commit()
+
+        except Exception as e:
+            logging.critical('Exception while creating Project or Payment', exc_info=True)
+
+            context = {
+                'error': 'Exception while creating Project or Payment'
+            }
+
+            return Response(response=json.dumps(context))
+
+    # handle extend_project call
+    else:
+        if project_id is None:
+            logging.critical('Extend project requested but no project ID provided in URL.')
+            context = {
+                'error': 'Extend project requested but no project ID provided in URL.'
+            }
+            return Response(response=json.dumps(context))
+
+        logging.info(f'Extending project: {}', project_id)
+        try:
+            with db_session:
+                project = Project.get(name=project_id)
+                payment = Payment.get(project=project_id)
+                if not project or not payment:
+                    logging.critical('No Project or no Payment record retreived from db', exc_info=True)
+                    context = {
+                        'error': 'No Project or no Payment record retreived from db'
+                    }
+                    return Response(response=json.dumps(context))
+
+                # Fetch xquery_bool, archival_mode_bool from db
+                xquery_bool, archival_mode_bool = project.xquery, project.archive_mode
+
+                # Don't allow auto_activate (free) API tokens when extending a project
+                auto_activate = False
+
+                # Fetch min amounts to be paid to activate a project
+                min_amount = get_min_amounts(auto_activate, xquery_bool, archival_mode_bool, amounts)
+
+                # set pending = True so next payment receives full credit as long as quote is valid
+                payment.pending = True
+
+                payment.quote_start_time = datetime.datetime.now(),
+                payment.min_amount_eth = min_amount['eth'],
+                payment.min_amount_ablock = min_amount['ablock'],
+                payment.min_amount_avax = min_amount['avax'],
+                payment.min_amount_aablock = min_amount['aablock'],
+                payment.min_amount_wsys = min_amount['wsys'],
+                payment.min_amount_sysblock = min_amount['sysblock'],
+
+                commit()
+        except Exception as e:
+            logging.critical('Exception while extending Project or Payment', exc_info=True)
+            context = {
+                'error': 'Exception while extending Project or Payment'
+            }
+            return Response(response=json.dumps(context))
+
+    try:
         with db_session:
-            project = Project(
-                name=project_name,
-                api_key=api_key,
-                api_token_count=6000000,
-                used_api_tokens=0,
-                active=False,
-                user_cancelled=False
-            )
+            project = Project.get(name=project_id)
+            payment = Payment.get(project=project_id)
+            if not project or not payment:
+                logging.critical('No Project or no Payment record retreived from db', exc_info=True)
+                context = {
+                    'error': 'No Project or no Payment record retreived from db'
+                }
+                return Response(response=json.dumps(context))
 
-            payment = Payment(
-                pending=True,
-                eth_token=eth_token if eth_token!=None else '',
-                eth_address=eth_address if eth_address!=None else '',
-                eth_privkey=eth_privkey if eth_privkey!=None else '',
-                avax_token=avax_token if avax_token!=None else '',
-                avax_address=avax_address if avax_address!=None else '',
-                avax_privkey=avax_privkey if avax_privkey!=None else '',
-                nevm_token=nevm_token if nevm_token!=None else '',
-                nevm_address=nevm_address if nevm_address!=None else '',
-                nevm_privkey=nevm_privkey if nevm_privkey!=None else '',
-                start_time=start_time,
-                project=project,
-                tier1_expected_amount_eth=tier1_expected_amount_eth if tier1_expected_amount_eth!=None else -1,
-                tier2_expected_amount_eth=tier2_expected_amount_eth if tier2_expected_amount_eth!=None else -1,
-                tier1_expected_amount_ablock=tier1_expected_amount_ablock if tier1_expected_amount_ablock!=None else -1,
-                tier2_expected_amount_ablock=tier2_expected_amount_ablock if tier2_expected_amount_ablock!=None else -1,
-                tier1_expected_amount_aablock=tier1_expected_amount_aablock if tier1_expected_amount_aablock!=None else -1,
-                tier2_expected_amount_aablock=tier2_expected_amount_aablock if tier2_expected_amount_aablock!=None else -1,
-                tier1_expected_amount_sysblock=tier1_expected_amount_sysblock if tier1_expected_amount_sysblock!=None else -1,
-                tier2_expected_amount_sysblock=tier2_expected_amount_sysblock if tier2_expected_amount_sysblock!=None else -1,
-                tier1_expected_amount_wsys=tier1_expected_amount_wsys if tier1_expected_amount_wsys!=None else -1,
-                tier2_expected_amount_wsys=tier2_expected_amount_wsys if tier2_expected_amount_wsys!=None else -1,
-                amount_eth=0,
-                amount_ablock=0,
-                amount_aablock=0,
-                amount_sysblock=0,
-                amount_wsys=0
-            )
+            context = {
+                'result': {
+                    'project_id': project.name,
+                    'api_key': project.api_key,
+                    'min_amount_eth': payment.min_amount_eth,
+                    'min_amount_ablock': payment.min_amount_ablock,
+                    'min_amount_avax': payment.min_amount_avax,
+                    'min_amount_aablock': payment.min_amount_aablock,
+                    'min_amount_wsys': payment.min_amount_wsys,
+                    'min_amount_sysblock': payment.min_amount_sysblock,
+                    'payment_eth_address': payment.payment_eth_address,
+                    'payment_avax_address': payment.payment_avax_address,
+                    'payment_nevm_address': payment.payment_nevm_address,
+                    'quote_expiry_time': (payment.quote_start_time + datetime.timedelta(hours=quote_valid_hours)).strftime("%Y-%m-%d %H:%M:%S UTC")
+                }
+            }
 
-            commit()
-    except Exception as e:
-        logging.critical('Exception while creating Project or Payment', exc_info=True)
-        
-        context = { 
-            'error': 'Exception while creating Project or Payment'
-        }
+        logging.info('Successfully created new pending project')
 
         return Response(response=json.dumps(context))
 
-    context = {
-        'result': {
-            'project_id': project_name,
-            'api_key': api_key,
-            'payment_eth_address': eth_address,
-            'payment_avax_address': avax_address,
-            'payment_nevm_address': nevm_address,
-            'payment_amount_tier1_eth': tier1_expected_amount_eth,
-            'payment_amount_tier2_eth': tier2_expected_amount_eth,
-            'payment_amount_tier1_ablock': tier1_expected_amount_ablock,
-            'payment_amount_tier2_ablock': tier2_expected_amount_ablock,
-            'payment_amount_tier1_aablock': tier1_expected_amount_aablock,
-            'payment_amount_tier2_aablock': tier2_expected_amount_aablock,
-            'payment_amount_tier1_sysblock': tier1_expected_amount_sysblock,
-            'payment_amount_tier2_sysblock': tier2_expected_amount_sysblock,
-            'payment_amount_tier1_wsys': tier1_expected_amount_wsys,
-            'payment_amount_tier2_wsys': tier2_expected_amount_wsys,
-            'expiry_time': payment_expires.strftime("%Y-%m-%d %H:%M:%S UTC")
+    except Exception as e:
+        logging.critical('Exception while generating response for newly created or extended Project or Payment', exc_info=True)
+        context = {
+            'error': 'Exception while generating response for newly created or extended Project or Payment'
         }
-    }
-
-    logging.info('Successfully created new pending project')
-
-    return Response(response=json.dumps(context))
-
+        return Response(response=json.dumps(context))
 
 #@app.route("/list_projects", methods=['GET'])
 #def list_projects():

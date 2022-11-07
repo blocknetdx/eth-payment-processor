@@ -21,11 +21,10 @@ elif AVAX_HOST_TYPE in ['ws','wss']:
 else:
     provider_avax = None
     
-usdtContract_address = '0x9ee0a4e21bd333a6bb2ab298194320b8daa26516'
-aablockContract_address = '0xfFc53c9d889B4C0bfC1ba7B9E253C615300d9fFD'
+contract_address = {'usdt':'0x9ee0a4e21bd333a6bb2ab298194320b8daa26516','aablock':'0xfFc53c9d889B4C0bfC1ba7B9E253C615300d9fFD'}
 
-
-def get_price_aablock():
+# param avax_aablock_ == True returns usdt price of avax; avax_aablock_ == False returns usdt price of aablock
+def get_price__avax_aablock(avax_aablock_):
 
     def price(reserveToken0, reserveToken1, token0Address, token1Address):
 
@@ -47,26 +46,12 @@ def get_price_aablock():
     if provider_avax is None:
         return None
 
-    usdtContract = provider_avax.eth.contract(address=provider_avax.toChecksumAddress(usdtContract_address), abi=poolABI)
-    aablockContract = provider_avax.eth.contract(address=provider_avax.toChecksumAddress(aablockContract_address), abi=poolABI)
+    price_in_wavax = {}
+    for token in ['usdt', 'aablock']:
+        contract = provider_avax.eth.contract(address=provider_avax.tochecksumaddress(contract_address[token]), abi=poolabi)
+        reserves = contract.functions.getreserves().call()
+        token0Address = contract.functions.token0().call()
+        token1Address = contract.functions.token1().call()
+        price_in_wavax[token] = price(reserves[0], reserves[1], token0Address, token1Address)
 
-
-    reserves_usdt = usdtContract.functions.getReserves().call()
-    reserveToken0 = reserves_usdt[0]
-    reserveToken1 = reserves_usdt[1]
-
-    token0Address = usdtContract.functions.token0().call()
-    token1Address = usdtContract.functions.token1().call()
-
-    price_usdt = price(reserveToken0, reserveToken1, token0Address, token1Address)
-
-    reserves_aablock = aablockContract.functions.getReserves().call()
-    reserveToken0 = reserves_aablock[0]
-    reserveToken1 = reserves_aablock[1]
-
-    token0Address = aablockContract.functions.token0().call()
-    token1Address = aablockContract.functions.token1().call()
-
-    price_aablock = price(reserveToken0, reserveToken1, token0Address, token1Address)
-
-    return price_usdt / price_aablock
+    return price_in_wavax['usdt'] if avax_aablock_ else price_in_wavax['usdt'] / price_in_wavax['aablock']
