@@ -87,18 +87,17 @@ class Web3Helper:
         if len(accounts) > 0:
                 self.accounts[evm] = accounts
 
-    def get_evm_address(self, evm):
+    def get_evm_address(self, evm, token):
         if self.w3[evm] is None:
-            return [None, None, None]
+            return [None, None]
         try:
-            token = secrets.token_hex(32)
             acc = self.w3[evm].eth.account.create(token)
             address = acc.address
             privkey = acc.privateKey.hex()
-            return [token, address, privkey]
+            return [address, privkey]
         except Exception as e:
             logging.critical(f'get {evm.upper()} address exception', exc_info=True)
-            return [None, None, None]
+            return [None, None]
 
     # returns dict of addr => addr_value
     def check_balance(self, evm, evm_coin_block_token_):

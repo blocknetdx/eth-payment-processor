@@ -127,9 +127,11 @@ def create_or_extend_project(project_id=None):
         # Fetch min amounts to be paid to activate a project
         min_amount = get_min_amounts(auto_activate, xquery_bool, archival_mode_bool, amounts)
 
-        eth_token, eth_address, eth_privkey = web3_helper.get_evm_address(eth)
-        avax_token, avax_address, avax_privkey = web3_helper.get_evm_address(avax)
-        nevm_token, nevm_address, nevm_privkey = web3_helper.get_evm_address(nevm)
+
+        token = secrets.token_hex(32)
+        eth_address, eth_privkey = web3_helper.get_evm_address(eth, token)
+        avax_address, avax_privkey = web3_helper.get_evm_address(avax, token)
+        nevm_address, nevm_privkey = web3_helper.get_evm_address(nevm, token)
         project_name = str(uuid.uuid4())
         api_key = secrets.token_urlsafe(32)
 
@@ -158,13 +160,13 @@ def create_or_extend_project(project_id=None):
 
                 payment = Payment(
                     pending=not auto_activate,
-                    eth_token=eth_token if eth_token!=None else '',
+                    eth_token=token if token!=None else '',
                     eth_address=eth_address if eth_address!=None and not auto_activate else '',
                     eth_privkey=eth_privkey if eth_privkey!=None else '',
-                    avax_token=avax_token if avax_token!=None else '',
+                    avax_token=token if token!=None else '',
                     avax_address=avax_address if avax_address!=None and not auto_activate else '',
                     avax_privkey=avax_privkey if avax_privkey!=None else '',
-                    nevm_token=nevm_token if nevm_token!=None else '',
+                    nevm_token=token if token!=None else '',
                     nevm_address=nevm_address if nevm_address!=None and not auto_activate else '',
                     nevm_privkey=nevm_privkey if nevm_privkey!=None else '',
                     quote_start_time=datetime.datetime.now(),
@@ -266,6 +268,7 @@ def create_or_extend_project(project_id=None):
                     'payment_eth_address': payment.payment_eth_address,
                     'payment_avax_address': payment.payment_avax_address,
                     'payment_nevm_address': payment.payment_nevm_address,
+                    'quote_start_time': payment.quote_start_time.strftime("%Y-%m-%d %H:%M:%S UTC"),
                     'quote_expiry_time': (payment.quote_start_time + datetime.timedelta(hours=quote_valid_hours)).strftime("%Y-%m-%d %H:%M:%S UTC")
                 }
             }
