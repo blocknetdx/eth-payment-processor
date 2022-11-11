@@ -119,6 +119,23 @@ def create_or_extend_project(project_id=None):
                 hydra_bool = True
                 archive_mode_bool = 'tier' in lc_keys_request_json.keys() and lc_keys_request_json['tier'] == 2
 
+        # Prevent client from creating a project for a service not supported on this SNode
+        if min_payment_amount_xquery < 0 and xquery_bool:
+            context = {
+                'error': 'This Service Node does not provide XQuery service.'
+                }
+            return Response(response=json.dumps(context))
+        if min_payment_amount_tier1 < 0 and hydra_bool:
+            context = {
+                'error': 'This Service Node does not provide Hydra service.'
+                }
+            return Response(response=json.dumps(context))
+        if min_payment_amount_tier2 < 0 and hydra_bool and archive_mode_bool:
+            context = {
+                'error': 'This Service Node does not provide tier2 Hydra service.'
+                }
+            return Response(response=json.dumps(context))
+
         # automatically activate a newly created project if SNode operator is charging 0 (i.e. offering free service)
         auto_activate = min_payment_amount_xquery == 0 if xquery_bool \
                 else min_payment_amount_tier2 == 0 if archive_mode_bool \
