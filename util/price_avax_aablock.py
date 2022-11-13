@@ -24,7 +24,7 @@ else:
 contract_address = {'usdt':'0x9ee0a4e21bd333a6bb2ab298194320b8daa26516','aablock':'0xfFc53c9d889B4C0bfC1ba7B9E253C615300d9fFD'}
 
 # param avax_aablock_ == True returns usdt price of avax; avax_aablock_ == False returns usdt price of aablock
-def get_price__avax_aablock(avax_aablock_):
+def get_price_avax_aablock(avax_aablock_):
 
     def price(reserveToken0, reserveToken1, token0Address, token1Address):
 

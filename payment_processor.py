@@ -9,10 +9,10 @@ import datetime
 from threading import Thread
 from flask import Flask, request, Response, g, jsonify
 from database.models import commit, db_session, select, Project, Payment
-from util.eth_payments import Web3Helper
+from util.eth_payments import Web3Helper, coin_names
 from util import get_eth_amount, get_wsys_amount, get_ablock_amount, get_aablock_amount, get_sysblock_amount, \
                  min_payment_amount_tier1, min_payment_amount_tier2, min_payment_amount_xquery, discount_ablock, discount_aablock, discount_sysblock, \
-                 min_api_calls, coin_names, quote_valid_hours
+                 min_api_calls, quote_valid_hours
 
 LOGLEVEL = os.environ.get('LOGLEVEL', 'INFO').upper()
 logging.basicConfig(level=LOGLEVEL, stream=sys.stdout,
@@ -55,7 +55,7 @@ def on_startup():
 def get_min_amounts(auto_activate, xquery_bool, archival_mode_bool, amounts):
 
     min_amount = {}
-    for coin_name in [coin_names[x][y] for x in coin_names for y in [True, False]]
+    for coin_name in [coin_names[x][y] for x in coin_names for y in [True, False]]:
         if auto_activate:
             min_amount[coin_name] = 0
         elif xquery_bool:
@@ -86,8 +86,8 @@ def create_or_extend_project(project_id=None):
     # fetch min payment amounts
     amounts = {}
     for evm in coin_names:
-        for native_block_ in [True, False]
-            discount = eval(f'discount_{coin_names[evm][native_block_]}') if not native_block_ else 1:
+        for native_block_ in [True, False]:
+            discount = eval(f'discount_{coin_names[evm][native_block_]}') if not native_block_ else 1
             amounts[f'tier1_min_amount_{coin_names[evm][native_block_]}'] = eval(f'get_{coin_names[evm][native_block_]}_amount(min_payment_amount_tier1*discount)')
             amounts[f'tier2_min_amount_{coin_names[evm][native_block_]}'] = eval(f'get_{coin_names[evm][native_block_]}_amount(min_payment_amount_tier2*discount)')
             amounts[f'xquery_min_amount_{coin_names[evm][native_block_]}'] = eval(f'get_{coin_names[evm][native_block_]}_amount(min_payment_amount_xquery*discount)')
@@ -204,7 +204,7 @@ def create_or_extend_project(project_id=None):
             }
             return Response(response=json.dumps(context))
 
-        logging.info(f'Extending project: {}', project_id)
+        logging.info(f'Extending project: {project_id}')
         try:
             with db_session:
                 project = Project.get(name=project_id)

@@ -104,12 +104,12 @@ class Web3Helper:
         # evm_coin_block_token_ = True if checking balance of evm coin, False if checking balance of block token on evm
         paid = {}
         for address in self.accounts[evm]:
-                if evm_coin_block_token_:
-                    balance = self.w3[evm].eth.getBalance(Web3.toChecksumAddress(address))
-                    amount = float(Web3.fromWei(balance, 'ether'))
-                else:
-                    balance = self.contract[evm].functions.balanceOf(Web3.toChecksumAddress(address)).call()
-                    amount = float(Web3.fromWei(balance_contract*10**10, 'ether'))
+            if evm_coin_block_token_:
+                balance = self.w3[evm].eth.getBalance(Web3.toChecksumAddress(address))
+                amount = float(Web3.fromWei(balance, 'ether'))
+            else:
+                balance_contract = self.contract[evm].functions.balanceOf(Web3.toChecksumAddress(address)).call()
+                amount = float(Web3.fromWei(balance_contract*10**10, 'ether'))
             if amount > 0:
                 paid[address] = amount
         return paid
@@ -132,7 +132,7 @@ class Web3Helper:
                 payment_obj.amount_ablock = float(value)
 
         # evm_coin_block_token_ = True if checking balance of evm native coin, False if checking balance of block token on evm
-        for evm_coin_block_token_ in [True, False]
+        for evm_coin_block_token_ in [True, False]:
             accounts = self.check_balance(evm, evm_coin_block_token_) # stores dict of addr => addr_value in accounts var
             coin_name = coin_names[evm][evm_coin_block_token_]
             logging.info(f'processing {coin_name} payments...')
@@ -160,7 +160,7 @@ class Web3Helper:
 
                     # Only set the project to active if the user has
                     # more api tokens available than used api tokens.
-                    if payment_obj.project.api_token_count > payment_obj.project.used_api_tokens
+                    if payment_obj.project.api_token_count > payment_obj.project.used_api_tokens:
                         payment_obj.project.active = True
                         payment_obj.project.activated = True
 
@@ -175,5 +175,3 @@ class Web3Helper:
                     logging.info('{} {} withdrawn from project: {} address: {} by SNode operator'.format(abs(value_added), coin_name, payment_obj.project.name,
                                                                                  to_address))
                     update_db_amount(coin_name, payment_obj, value)
-
-                                                                                 to_address, value))

@@ -4,7 +4,7 @@ import time
 import json
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
-from util.price_aablock import get_price_aablock
+from util.price_avax_aablock import get_price_avax_aablock
 from util.price_sysblock import get_price_pegasys, get_price_sysblock
 
 quote_valid_hours = 1 # number of hours for which price quote given to client is valid; afterwhich, payments get half API calls
@@ -124,7 +124,7 @@ def get_aablock_amount(amount):
 
     try:
         if last_amount_update_time_aablock is None or (int(time.time()) - 60) > last_amount_update_time_aablock:
-            aablock_price = get_price__avax_aablock(False)
+            aablock_price = get_price_avax_aablock(False)
             last_amount_update_time_aablock = int(time.time())
     except Exception as e:
         logging.warning('Pangolin aaBLOCK price lookup failed with error:', exc_info=True)

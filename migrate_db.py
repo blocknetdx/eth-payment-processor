@@ -76,7 +76,7 @@ if __name__ == '__main__':
 	drop_column('payment','tier1_expected_amount_sys')
 	drop_column('payment','tier2_expected_amount_sys')
 	drop_column('payment','amount_sys')
-    
+
 	not_required_column('payment','pending')
 	not_required_column('payment','eth_address')
 	not_required_column('payment','tier1_expected_amount_eth')
@@ -110,9 +110,9 @@ if __name__ == '__main__':
 	add_column('project','xquery', 'bool')
 	add_column('project','hydra', 'bool')
 
-        drop_column('project', 'expires')
-        add_column('project', 'activated', 'bool')
-        rename_column('payment','start_time','quote_start_time')
+	drop_column('project', 'expires')
+	add_column('project', 'activated', 'bool')
+	rename_column('payment','start_time','quote_start_time')
 
 	rename_column('payment','tier1_expected_amount_eth','min_amount_eth')
 	drop_column('payment','tier2_expected_amount_eth')
