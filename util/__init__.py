@@ -10,9 +10,9 @@ from util.price_sysblock import get_price_pegasys, get_price_sysblock
 quote_valid_hours = 1 # number of hours for which price quote given to client is valid; afterwhich, payments get half API calls
 min_api_calls = 1000
 ref_api_calls = 6000000
-min_payment_amount_xquery = float(os.environ.get('PAYMENT_AMOUNT_XQUERY', 35))*min_api_calls/ref_api_calls
-min_payment_amount_tier1 = float(os.environ.get('PAYMENT_AMOUNT_TIER1', 35))*min_api_calls/ref_api_calls
-min_payment_amount_tier2 = float(os.environ.get('PAYMENT_AMOUNT_TIER2', 200))*min_api_calls/ref_api_calls
+min_payment_amount_xquery = float(os.environ.get('PAYMENT_AMOUNT_XQUERY', -1))*min_api_calls/ref_api_calls
+min_payment_amount_tier1 = float(os.environ.get('PAYMENT_AMOUNT_TIER1', -1))*min_api_calls/ref_api_calls
+min_payment_amount_tier2 = float(os.environ.get('PAYMENT_AMOUNT_TIER2', -1))*min_api_calls/ref_api_calls
 discount_ablock = float((100 - int(os.environ.get('DISCOUNT_ABLOCK', 20)))/100)
 discount_aablock = float((100 - int(os.environ.get('DISCOUNT_AABLOCK', 0)))/100)
 discount_sysblock = float((100 - int(os.environ.get('DISCOUNT_SYSBLOCK', 10)))/100)
