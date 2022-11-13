@@ -49,7 +49,8 @@ def update_api_counts():
 def on_startup():
     evm_threads = {}
     for evm in coin_names:
-        evm_threads[evm] = Thread(target=web3_helper.evm_start(evm), daemon=True)
+        logging.info(f'Starting {evm} blockchain payment processing thread...')
+        evm_threads[evm] = eval(f'Thread(target=web3_helper.{evm}_start, daemon=True)')
         evm_threads[evm].start()
 
 def get_min_amounts(auto_activate, xquery_bool, archival_mode_bool, amounts):

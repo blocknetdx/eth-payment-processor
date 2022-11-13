@@ -13,6 +13,9 @@ from util import get_eth_amount, get_wsys_amount, \
                  min_payment_amount_tier1, min_payment_amount_tier2, min_payment_amount_xquery, \
                  discount_ablock, discount_aablock, discount_sysblock, quote_valid_hours
 
+
+sleep_time = 20 # time to sleep, in seconds, between checking for new web3 payment/withdrawal activity
+
 # create nested dict of names of EVM native coins (coin_names[evm][True]) and block token names (coin_names[evm][False])
 coin_names = {
         'eth': {
@@ -45,7 +48,6 @@ class Web3Helper:
         self.PORT = {}
         self.HOST_TYPE = {}
         self.w3 = {}
-        #self.w3_accounts = {}
         self.contract = {}
         self.accounts = {}
         for evm in coin_names:
@@ -53,22 +55,32 @@ class Web3Helper:
             self.PORT[evm] = os.environ.get(f'{evm.upper()}_PORT','')
             self.HOST_TYPE[evm] = os.environ.get(f'{evm.upper()}_HOST_TYPE','')
             self.w3[evm] = None
-            #self.w3_accounts[evm] = None
-            url_ext = '/ext/bc/C/rpc' if evm == 'AVAX' else ''
+            url_ext = '/ext/bc/C/rpc' if evm.upper() == 'AVAX' else ''
             if self.HOST_TYPE[evm] in ['http', 'https'] and self.HOST[evm]!='':
                 self.w3[evm] = Web3(Web3.HTTPProvider(f'{self.HOST_TYPE[evm]}://{self.HOST[evm]}:{self.PORT[evm]}{url_ext}'))
-                #self.w3_accounts[evm] = Web3(Web3.HTTPProvider(f'{self.HOST_TYPE[evm]}://{self.HOST[evm]}:{self.PORT[evm]}{url_ext}'))
             elif self.HOST_TYPE[evm] in ['ws', 'wss'] and self.HOST[evm]!='':
                 self.w3[evm] = Web3(Web3.WebsocketProvider(f'{self.HOST_TYPE[evm]}://{self.HOST[evm]}:{self.PORT[evm]}{url_ext}'))
-                #self.w3_accounts[evm] = Web3(Web3.WebsocketProvider(f'{self.HOST_TYPE[evm]}://{self.HOST[evm]}:{self.PORT[evm]}{url_ext}'))
             self.w3[evm].middleware_onion.inject(geth_poa_middleware, layer=0)
-            #self.w3_accounts[evm].middleware_onion.inject(geth_poa_middleware, layer=0)
             if self.HOST_TYPE[evm]!='':
                 self.contract[evm] = self.w3[evm].eth.contract(address=block_contract_address[evm], abi=abi)
             self.accounts[evm] = []
 
-    def evm_start(self, evm):
-        if self.HOST_TYPE[evm]=='': return # this saves CPU cycle
+#    def evm_start(self, evm):
+#        if self.HOST_TYPE[evm]=='': return # this saves CPU cycles
+#        logging.info(f'{evm.upper()} loop starting in 2s')
+#        time.sleep(2) # I have no idea why this is here - Conan
+#        while True:
+#            try:
+#                self.fetch_evm_accounts(evm) #  sets self.accounts[evm] to list of all evm addresses which have been created via create_project
+#                self.handle_evm_event(evm)
+#            except Exception as e:
+#                logging.critical(f'error handling {evm}', exc_info=True)
+#            logging.info(f'processing {evm} blockchain payments in {sleep_time}s...')
+#            time.sleep(sleep_time)
+
+    def eth_start(self):
+        evm = 'eth'
+        if self.HOST_TYPE[evm]=='': return # this saves CPU cycles
         logging.info(f'{evm.upper()} loop starting in 2s')
         time.sleep(2) # I have no idea why this is here - Conan
         while True:
@@ -76,9 +88,37 @@ class Web3Helper:
                 self.fetch_evm_accounts(evm) #  sets self.accounts[evm] to list of all evm addresses which have been created via create_project
                 self.handle_evm_event(evm)
             except Exception as e:
-                logging.critical(f'error handling {evm}', exc_info=True)
-            logging.info(f'processing {evm} projects in 20s...')
-            time.sleep(20)
+                logging.critical(f'error handling {evm} blockchain payments', exc_info=True)
+            logging.info(f'processing {evm} blockchain payments in {sleep_time}s...')
+            time.sleep(sleep_time)
+
+    def avax_start(self):
+        evm = 'avax'
+        if self.HOST_TYPE[evm]=='': return # this saves CPU cycles
+        logging.info(f'{evm.upper()} loop starting in 2s')
+        time.sleep(2) # I have no idea why this is here - Conan
+        while True:
+            try:
+                self.fetch_evm_accounts(evm) #  sets self.accounts[evm] to list of all evm addresses which have been created via create_project
+                self.handle_evm_event(evm)
+            except Exception as e:
+                logging.critical(f'error handling {evm} blockchain payments', exc_info=True)
+            logging.info(f'processing {evm} blockchain payments in {sleep_time}s...')
+            time.sleep(sleep_time)
+
+    def nevm_start(self):
+        evm = 'nevm'
+        if self.HOST_TYPE[evm]=='': return # this saves CPU cycles
+        logging.info(f'{evm.upper()} loop starting in 2s')
+        time.sleep(2) # I have no idea why this is here - Conan
+        while True:
+            try:
+                self.fetch_evm_accounts(evm) #  sets self.accounts[evm] to list of all evm addresses which have been created via create_project
+                self.handle_evm_event(evm)
+            except Exception as e:
+                logging.critical(f'error handling {evm} blockchain payments', exc_info=True)
+            logging.info(f'processing {evm} blockchain payments in {sleep_time}s...')
+            time.sleep(sleep_time)
 
     @db_session()
     def fetch_evm_accounts(self, evm):
