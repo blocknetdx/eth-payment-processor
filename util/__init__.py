@@ -71,7 +71,7 @@ def get_avax_amount(amount):
 
     try:
         if last_amount_update_time_avax is None or (int(time.time()) - 60) > last_amount_update_time_avax:
-            avax_price = get_price__avax_aablock(True)/(10**4)
+            avax_price = get_price_avax_aablock(True)
             last_amount_update_time_avax = int(time.time())
     except Exception as e:
         logging.warning('AVAX price lookup failed with error:', exc_info=True)
@@ -80,7 +80,7 @@ def get_avax_amount(amount):
     if avax_price is None:
         return None
 
-    return float('{:.6f}'.format(amount / avax_price))
+    return float('{:.10f}'.format(amount / avax_price))
 
 def get_eth_amount(amount):
     global eth_price
@@ -97,7 +97,7 @@ def get_eth_amount(amount):
     if eth_price is None:
         return None
 
-    return float('{:.6f}'.format(amount / eth_price))
+    return float('{:.10f}'.format(amount / eth_price))
 
 
 def get_ablock_amount(amount):
@@ -115,7 +115,7 @@ def get_ablock_amount(amount):
     if ablock_price is None:
         return None
 
-    return float('{:.6f}'.format(amount / ablock_price))
+    return float('{:.10f}'.format(amount / ablock_price))
 
 
 def get_aablock_amount(amount):
@@ -133,7 +133,7 @@ def get_aablock_amount(amount):
     if aablock_price is None:
         return None
 
-    return float('{:.6f}'.format(amount / aablock_price))
+    return float('{:.10f}'.format(amount / aablock_price))
 
 
 def get_sysblock_amount(amount):
@@ -151,7 +151,7 @@ def get_sysblock_amount(amount):
     if sysblock_price is None:
         return None
 
-    return float('{:.6f}'.format(amount / sysblock_price))
+    return float('{:.10f}'.format(amount / sysblock_price))
 
 
 def get_wsys_amount(amount):
@@ -169,5 +169,5 @@ def get_wsys_amount(amount):
     if wsys_price is None:
         return None
 
-    return float('{:.6f}'.format(amount / wsys_price))
+    return float('{:.10f}'.format(amount / wsys_price))
 

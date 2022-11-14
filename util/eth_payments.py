@@ -11,7 +11,7 @@ from database.models import Payment, db_session, commit
 from util import get_eth_amount, get_wsys_amount, \
                  get_ablock_amount, get_aablock_amount, get_sysblock_amount, \
                  min_payment_amount_tier1, min_payment_amount_tier2, min_payment_amount_xquery, \
-                 discount_ablock, discount_aablock, discount_sysblock, quote_valid_hours
+                 discount_ablock, discount_aablock, discount_sysblock, quote_valid_hours, min_api_calls
 
 
 sleep_time = 20 # time to sleep, in seconds, between checking for new web3 payment/withdrawal activity
@@ -65,21 +65,7 @@ class Web3Helper:
                 self.contract[evm] = self.w3[evm].eth.contract(address=block_contract_address[evm], abi=abi)
             self.accounts[evm] = []
 
-#    def evm_start(self, evm):
-#        if self.HOST_TYPE[evm]=='': return # this saves CPU cycles
-#        logging.info(f'{evm.upper()} loop starting in 2s')
-#        time.sleep(2) # I have no idea why this is here - Conan
-#        while True:
-#            try:
-#                self.fetch_evm_accounts(evm) #  sets self.accounts[evm] to list of all evm addresses which have been created via create_project
-#                self.handle_evm_event(evm)
-#            except Exception as e:
-#                logging.critical(f'error handling {evm}', exc_info=True)
-#            logging.info(f'processing {evm} blockchain payments in {sleep_time}s...')
-#            time.sleep(sleep_time)
-
-    def eth_start(self):
-        evm = 'eth'
+    def evm_start(self, evm):
         if self.HOST_TYPE[evm]=='': return # this saves CPU cycles
         logging.info(f'{evm.upper()} loop starting in 2s')
         time.sleep(2) # I have no idea why this is here - Conan
@@ -88,35 +74,7 @@ class Web3Helper:
                 self.fetch_evm_accounts(evm) #  sets self.accounts[evm] to list of all evm addresses which have been created via create_project
                 self.handle_evm_event(evm)
             except Exception as e:
-                logging.critical(f'error handling {evm} blockchain payments', exc_info=True)
-            logging.info(f'processing {evm} blockchain payments in {sleep_time}s...')
-            time.sleep(sleep_time)
-
-    def avax_start(self):
-        evm = 'avax'
-        if self.HOST_TYPE[evm]=='': return # this saves CPU cycles
-        logging.info(f'{evm.upper()} loop starting in 2s')
-        time.sleep(2) # I have no idea why this is here - Conan
-        while True:
-            try:
-                self.fetch_evm_accounts(evm) #  sets self.accounts[evm] to list of all evm addresses which have been created via create_project
-                self.handle_evm_event(evm)
-            except Exception as e:
-                logging.critical(f'error handling {evm} blockchain payments', exc_info=True)
-            logging.info(f'processing {evm} blockchain payments in {sleep_time}s...')
-            time.sleep(sleep_time)
-
-    def nevm_start(self):
-        evm = 'nevm'
-        if self.HOST_TYPE[evm]=='': return # this saves CPU cycles
-        logging.info(f'{evm.upper()} loop starting in 2s')
-        time.sleep(2) # I have no idea why this is here - Conan
-        while True:
-            try:
-                self.fetch_evm_accounts(evm) #  sets self.accounts[evm] to list of all evm addresses which have been created via create_project
-                self.handle_evm_event(evm)
-            except Exception as e:
-                logging.critical(f'error handling {evm} blockchain payments', exc_info=True)
+                logging.critical(f'error handling {evm}', exc_info=True)
             logging.info(f'processing {evm} blockchain payments in {sleep_time}s...')
             time.sleep(sleep_time)
 
@@ -154,6 +112,7 @@ class Web3Helper:
                 paid[address] = amount
         return paid
 
+
     @db_session()
     def handle_evm_event(self, evm):
 
@@ -188,8 +147,7 @@ class Web3Helper:
                 value = accounts[to_address]
                 value_added = value - eval(f'payment_obj.amount_{coin_name}')
                 if value_added >= min_amount:
-                    logging.info('{} {} payment received for project: {} at address: {}'.format(value_added, coin_name, payment_obj.project.name,
-                                                                                 to_address))
+                    logging.info('{} {} payment received for project: {} at address: {}'.format(value_added, coin_name, payment_obj.project.name, to_address))
 
                     # If payment quote still valid/pending, add to api_token_count according to amount paid
                     if payment_obj.pending:

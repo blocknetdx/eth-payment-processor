@@ -48,8 +48,8 @@ def get_price_avax_aablock(avax_aablock_):
 
     price_in_wavax = {}
     for token in ['usdt', 'aablock']:
-        contract = provider_avax.eth.contract(address=provider_avax.tochecksumaddress(contract_address[token]), abi=poolabi)
-        reserves = contract.functions.getreserves().call()
+        contract = provider_avax.eth.contract(address=provider_avax.toChecksumAddress(contract_address[token]), abi=poolABI)
+        reserves = contract.functions.getReserves().call()
         token0Address = contract.functions.token0().call()
         token1Address = contract.functions.token1().call()
         price_in_wavax[token] = price(reserves[0], reserves[1], token0Address, token1Address)

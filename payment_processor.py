@@ -10,9 +10,9 @@ from threading import Thread
 from flask import Flask, request, Response, g, jsonify
 from database.models import commit, db_session, select, Project, Payment
 from util.eth_payments import Web3Helper, coin_names
-from util import get_eth_amount, get_wsys_amount, get_ablock_amount, get_aablock_amount, get_sysblock_amount, \
-                 min_payment_amount_tier1, min_payment_amount_tier2, min_payment_amount_xquery, discount_ablock, discount_aablock, discount_sysblock, \
-                 min_api_calls, quote_valid_hours
+from util import get_eth_amount, get_wsys_amount, get_avax_amount, get_ablock_amount, get_aablock_amount, get_sysblock_amount, \
+                 min_payment_amount_tier1, min_payment_amount_tier2, min_payment_amount_xquery, discount_ablock, discount_aablock, \
+                 discount_sysblock, min_api_calls, quote_valid_hours
 
 LOGLEVEL = os.environ.get('LOGLEVEL', 'INFO').upper()
 logging.basicConfig(level=LOGLEVEL, stream=sys.stdout,
@@ -50,10 +50,12 @@ def on_startup():
     evm_threads = {}
     for evm in coin_names:
         logging.info(f'Starting {evm} blockchain payment processing thread...')
-        evm_threads[evm] = eval(f'Thread(target=web3_helper.{evm}_start, daemon=True)')
+        evm_threads[evm] = Thread(target=web3_helper.evm_start, daemon=True, args=[evm])
         evm_threads[evm].start()
+    t = Thread(target=update_api_counts, daemon=True)
+    t.start()
 
-def get_min_amounts(auto_activate, xquery_bool, archival_mode_bool, amounts):
+def get_min_amounts(auto_activate, xquery_bool, archive_mode_bool, amounts):
 
     min_amount = {}
     for coin_name in [coin_names[x][y] for x in coin_names for y in [True, False]]:
@@ -61,7 +63,7 @@ def get_min_amounts(auto_activate, xquery_bool, archival_mode_bool, amounts):
             min_amount[coin_name] = 0
         elif xquery_bool:
             min_amount[coin_name] = amounts[f'xquery_min_amount_{coin_name}']
-        elif archival_mode_bool:
+        elif archive_mode_bool:
             min_amount[coin_name] = amounts[f'tier2_min_amount_{coin_name}']
         else:
             min_amount[coin_name] = amounts[f'tier1_min_amount_{coin_name}']
@@ -143,17 +145,17 @@ def create_or_extend_project(project_id=None):
                 else min_payment_amount_tier1 == 0
 
         # Fetch min amounts to be paid to activate a project
-        min_amount = get_min_amounts(auto_activate, xquery_bool, archival_mode_bool, amounts)
+        min_amount = get_min_amounts(auto_activate, xquery_bool, archive_mode_bool, amounts)
 
 
         token = secrets.token_hex(32)
-        eth_address, eth_privkey = web3_helper.get_evm_address(eth, token)
-        avax_address, avax_privkey = web3_helper.get_evm_address(avax, token)
-        nevm_address, nevm_privkey = web3_helper.get_evm_address(nevm, token)
-        project_name = str(uuid.uuid4())
+        eth_address, eth_privkey = web3_helper.get_evm_address('eth', token)
+        avax_address, avax_privkey = web3_helper.get_evm_address('avax', token)
+        nevm_address, nevm_privkey = web3_helper.get_evm_address('nevm', token)
+        project_id = str(uuid.uuid4())
         api_key = secrets.token_urlsafe(32)
 
-        logging.info(f'Creating project {project_name} with payment amounts: {amounts}')
+        logging.info(f'Creating project {project_id} with payment amounts: {amounts}')
 
         if eth_address is None and avax_address is None and nevm_address is None:
             context = {
@@ -164,7 +166,7 @@ def create_or_extend_project(project_id=None):
         try:
             with db_session:
                 project = Project(
-                    name=project_name,
+                    name=project_id,
                     api_key=api_key,
                     api_token_count=10000 if auto_activate else 0, # keeps track of total api tokens awarded to client
                     used_api_tokens=0, # keeps track of total api tokens used by client
@@ -234,14 +236,14 @@ def create_or_extend_project(project_id=None):
                     }
                     return Response(response=json.dumps(context))
 
-                # Fetch xquery_bool, archival_mode_bool from db
-                xquery_bool, archival_mode_bool = project.xquery, project.archive_mode
+                # Fetch xquery_bool, archive_mode_bool from db
+                xquery_bool, archive_mode_bool = project.xquery, project.archive_mode
 
                 # Don't allow auto_activate (free) API tokens when extending a project
                 auto_activate = False
 
                 # Fetch min amounts to be paid to activate a project
-                min_amount = get_min_amounts(auto_activate, xquery_bool, archival_mode_bool, amounts)
+                min_amount = get_min_amounts(auto_activate, xquery_bool, archive_mode_bool, amounts)
 
                 # set pending = True so next payment receives full credit as long as quote is valid
                 payment.pending = True
@@ -283,9 +285,9 @@ def create_or_extend_project(project_id=None):
                     'min_amount_aablock': payment.min_amount_aablock,
                     'min_amount_wsys': payment.min_amount_wsys,
                     'min_amount_sysblock': payment.min_amount_sysblock,
-                    'payment_eth_address': payment.payment_eth_address,
-                    'payment_avax_address': payment.payment_avax_address,
-                    'payment_nevm_address': payment.payment_nevm_address,
+                    'payment_eth_address': payment.eth_address,
+                    'payment_avax_address': payment.avax_address,
+                    'payment_nevm_address': payment.nevm_address,
                     'quote_start_time': payment.quote_start_time.strftime("%Y-%m-%d %H:%M:%S UTC"),
                     'quote_expiry_time': (payment.quote_start_time + datetime.timedelta(hours=quote_valid_hours)).strftime("%Y-%m-%d %H:%M:%S UTC")
                 }
