@@ -248,13 +248,13 @@ def create_or_extend_project(project_id=None):
                 # set pending = True so next payment receives full credit as long as quote is valid
                 payment.pending = True
 
-                payment.quote_start_time = datetime.datetime.now(),
-                payment.min_amount_eth = min_amount['eth'],
-                payment.min_amount_ablock = min_amount['ablock'],
-                payment.min_amount_avax = min_amount['avax'],
-                payment.min_amount_aablock = min_amount['aablock'],
-                payment.min_amount_wsys = min_amount['wsys'],
-                payment.min_amount_sysblock = min_amount['sysblock'],
+                payment.quote_start_time = datetime.datetime.now()
+                payment.min_amount_eth = min_amount['eth']
+                payment.min_amount_ablock = min_amount['ablock']
+                payment.min_amount_avax = min_amount['avax']
+                payment.min_amount_aablock = min_amount['aablock']
+                payment.min_amount_wsys = min_amount['wsys']
+                payment.min_amount_sysblock = min_amount['sysblock']
 
                 commit()
         except Exception as e:
@@ -293,7 +293,7 @@ def create_or_extend_project(project_id=None):
                 }
             }
 
-        logging.info('Successfully created new pending project')
+        logging.info('Successfully created or extended project {}'.format(project_id))
 
         return Response(response=json.dumps(context))
 
