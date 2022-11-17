@@ -125,3 +125,8 @@ if __name__ == '__main__':
 	drop_column('payment','tier2_expected_amount_wsys')
 	rename_column('payment','tier1_expected_amount_sysblock','min_amount_sysblock')
 	drop_column('payment','tier2_expected_amount_sysblock')
+
+	add_column('payment','min_amount_usd', 'float8')
+	add_column('payment','min_amount_ablock_usd', 'float8')
+	add_column('payment','min_amount_aablock_usd', 'float8')
+	add_column('payment','min_amount_sysblock_usd', 'float8')

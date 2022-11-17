@@ -32,6 +32,11 @@ class Payment(db.Entity):
     nevm_address = Optional(str)
     nevm_privkey = Optional(str)
 
+    min_amount_usd = Optional(float)
+    min_amount_ablock_usd = Optional(float)
+    min_amount_aablock_usd = Optional(float)
+    min_amount_sysblock_usd = Optional(float)
+
     min_amount_eth = Optional(float)
     min_amount_ablock = Optional(float)
     min_amount_avax = Optional(float)

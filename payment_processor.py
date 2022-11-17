@@ -58,15 +58,26 @@ def on_startup():
 def get_min_amounts(auto_activate, xquery_bool, archive_mode_bool, amounts):
 
     min_amount = {}
-    for coin_name in [coin_names[x][y] for x in coin_names for y in [True, False]]:
-        if auto_activate:
-            min_amount[coin_name] = 0
-        elif xquery_bool:
-            min_amount[coin_name] = amounts[f'xquery_min_amount_{coin_name}']
-        elif archive_mode_bool:
-            min_amount[coin_name] = amounts[f'tier2_min_amount_{coin_name}']
-        else:
-            min_amount[coin_name] = amounts[f'tier1_min_amount_{coin_name}']
+    for evm in coin_names:
+        for native_block_ in [True, False]:
+            coin_name = coin_names[evm][native_block_]
+            discount = eval(f'discount_{coin_name}') if not native_block_ else 1
+            if auto_activate:
+                min_amount[coin_name] = 0
+                min_amount['usd'] = 0
+                min_amount[f'{coin_name}_usd'] = 0
+            elif xquery_bool:
+                min_amount[coin_name] = amounts[f'xquery_min_amount_{coin_name}']
+                min_amount['usd'] = min_payment_amount_xquery
+                min_amount[f'{coin_name}_usd'] = min_payment_amount_xquery*discount
+            elif archive_mode_bool:
+                min_amount[coin_name] = amounts[f'tier2_min_amount_{coin_name}']
+                min_amount['usd'] = min_payment_amount_tier2
+                min_amount[f'{coin_name}_usd'] = min_payment_amount_tier2*discount
+            else:
+                min_amount[coin_name] = amounts[f'tier1_min_amount_{coin_name}']
+                min_amount['usd'] = min_payment_amount_tier1
+                min_amount[f'{coin_name}_usd'] = min_payment_amount_tier1*discount
 
     return min_amount
 
@@ -90,10 +101,11 @@ def create_or_extend_project(project_id=None):
     amounts = {}
     for evm in coin_names:
         for native_block_ in [True, False]:
-            discount = eval(f'discount_{coin_names[evm][native_block_]}') if not native_block_ else 1
-            amounts[f'tier1_min_amount_{coin_names[evm][native_block_]}'] = eval(f'get_{coin_names[evm][native_block_]}_amount(min_payment_amount_tier1*discount)')
-            amounts[f'tier2_min_amount_{coin_names[evm][native_block_]}'] = eval(f'get_{coin_names[evm][native_block_]}_amount(min_payment_amount_tier2*discount)')
-            amounts[f'xquery_min_amount_{coin_names[evm][native_block_]}'] = eval(f'get_{coin_names[evm][native_block_]}_amount(min_payment_amount_xquery*discount)')
+            coin_name = coin_names[evm][native_block_]
+            discount = eval(f'discount_{coin_name}') if not native_block_ else 1
+            amounts[f'tier1_min_amount_{coin_name}'] = eval(f'get_{coin_name}_amount(min_payment_amount_tier1*discount)')
+            amounts[f'tier2_min_amount_{coin_name}'] = eval(f'get_{coin_name}_amount(min_payment_amount_tier2*discount)')
+            amounts[f'xquery_min_amount_{coin_name}'] = eval(f'get_{coin_name}_amount(min_payment_amount_xquery*discount)')
 
     if len(amounts) - list(amounts.values()).count(None) < 1:
         context = {
@@ -191,6 +203,10 @@ def create_or_extend_project(project_id=None):
                     nevm_privkey=nevm_privkey if nevm_privkey!=None else '',
                     quote_start_time=datetime.datetime.now(),
                     project=project,
+                    min_amount_usd = min_amount['usd'],
+                    min_amount_ablock_usd = min_amount['ablock_usd'],
+                    min_amount_aablock_usd = min_amount['aablock_usd'],
+                    min_amount_sysblock_usd = min_amount['sysblock_usd'],
                     min_amount_eth = min_amount['eth'],
                     min_amount_ablock = min_amount['ablock'],
                     min_amount_avax = min_amount['avax'],
@@ -249,6 +265,10 @@ def create_or_extend_project(project_id=None):
                 payment.pending = True
 
                 payment.quote_start_time = datetime.datetime.now()
+                payment.min_amount_usd = min_amount['usd']
+                payment.min_amount_ablock_usd = min_amount['ablock_usd']
+                payment.min_amount_aablock_usd = min_amount['aablock_usd']
+                payment.min_amount_sysblock_usd = min_amount['sysblock_usd']
                 payment.min_amount_eth = min_amount['eth']
                 payment.min_amount_ablock = min_amount['ablock']
                 payment.min_amount_avax = min_amount['avax']
@@ -285,6 +305,10 @@ def create_or_extend_project(project_id=None):
                     'min_amount_aablock': payment.min_amount_aablock,
                     'min_amount_wsys': payment.min_amount_wsys,
                     'min_amount_sysblock': payment.min_amount_sysblock,
+                    'min_amount_usd': payment.min_amount_usd,
+                    'min_amount_ablock_usd': payment.min_amount_ablock_usd,
+                    'min_amount_aablock_usd': payment.min_amount_aablock_usd,
+                    'min_amount_sysblock_usd': payment.min_amount_sysblock_usd,
                     'payment_eth_address': payment.eth_address,
                     'payment_avax_address': payment.avax_address,
                     'payment_nevm_address': payment.nevm_address,
