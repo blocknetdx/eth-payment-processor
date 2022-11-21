@@ -103,9 +103,9 @@ def create_or_extend_project(project_id=None):
         for native_block_ in [True, False]:
             coin_name = coin_names[evm][native_block_]
             discount = eval(f'discount_{coin_name}') if not native_block_ else 1
-            amounts[f'tier1_min_amount_{coin_name}'] = eval(f'get_{coin_name}_amount(min_payment_amount_tier1*discount)')
-            amounts[f'tier2_min_amount_{coin_name}'] = eval(f'get_{coin_name}_amount(min_payment_amount_tier2*discount)')
-            amounts[f'xquery_min_amount_{coin_name}'] = eval(f'get_{coin_name}_amount(min_payment_amount_xquery*discount)')
+            amounts[f'tier1_min_amount_{coin_name}'] = eval(f'get_{coin_name}_amount(min_payment_amount_tier1*discount)') if web3_helper.HOST[evm] != '' else None
+            amounts[f'tier2_min_amount_{coin_name}'] = eval(f'get_{coin_name}_amount(min_payment_amount_tier2*discount)') if web3_helper.HOST[evm] != '' else None
+            amounts[f'xquery_min_amount_{coin_name}'] = eval(f'get_{coin_name}_amount(min_payment_amount_xquery*discount)') if web3_helper.HOST[evm] != '' else None
 
     if len(amounts) - list(amounts.values()).count(None) < 1:
         context = {
