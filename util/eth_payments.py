@@ -55,15 +55,15 @@ class Web3Helper:
             self.PORT[evm] = os.environ.get(f'{evm.upper()}_PORT','')
             self.HOST_TYPE[evm] = os.environ.get(f'{evm.upper()}_HOST_TYPE','')
             self.w3[evm] = None
+            self.accounts[evm] = []
+            if self.HOST[evm]=='': continue
             url_ext = '/ext/bc/C/rpc' if evm.upper() == 'AVAX' else ''
-            if self.HOST_TYPE[evm] in ['http', 'https'] and self.HOST[evm]!='':
+            if self.HOST_TYPE[evm] in ['http', 'https']:
                 self.w3[evm] = Web3(Web3.HTTPProvider(f'{self.HOST_TYPE[evm]}://{self.HOST[evm]}:{self.PORT[evm]}{url_ext}'))
-            elif self.HOST_TYPE[evm] in ['ws', 'wss'] and self.HOST[evm]!='':
+            elif self.HOST_TYPE[evm] in ['ws', 'wss']:
                 self.w3[evm] = Web3(Web3.WebsocketProvider(f'{self.HOST_TYPE[evm]}://{self.HOST[evm]}:{self.PORT[evm]}{url_ext}'))
             self.w3[evm].middleware_onion.inject(geth_poa_middleware, layer=0)
-            if self.HOST_TYPE[evm]!='':
-                self.contract[evm] = self.w3[evm].eth.contract(address=block_contract_address[evm], abi=abi)
-            self.accounts[evm] = []
+            self.contract[evm] = self.w3[evm].eth.contract(address=block_contract_address[evm], abi=abi)
 
     def evm_start(self, evm):
         if self.HOST_TYPE[evm]=='': return # this saves CPU cycles
