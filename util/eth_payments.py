@@ -78,12 +78,16 @@ class Web3Helper:
             logging.info(f'processing {evm} blockchain payments in {sleep_time}s...')
             time.sleep(sleep_time)
 
-    @db_session()
+    @db_session(optimistic=False)
     def fetch_evm_accounts(self, evm):
         query = Payment.select(eval(f'lambda payment: payment.quote_start_time is not None and payment.{evm}_address is not None and payment.{evm}_address!=""'))
         accounts = eval(f'[payment.{evm}_address for payment in query]')
         if len(accounts) > 0:
-                self.accounts[evm] = accounts
+            self.accounts[evm] = accounts
+            for payment in query:
+                if payment.pending and datetime.datetime.now() > payment.quote_start_time + datetime.timedelta(hours=quote_valid_hours):
+                    logging.info(f'setting payment.pending = False for project: {payment.project} due to quote time expired.')
+                    payment.pending = False # set pending = False if quote time expired
 
     def get_evm_address(self, evm, token):
         if self.w3[evm] is None:
@@ -140,9 +144,6 @@ class Web3Helper:
                 min_amount = eval(f'payment_obj.min_amount_{coin_name}')
                 if min_amount <= 0:
                     continue # SNode op may have set min_amount to 0 to allow free access; this continue prevents division by 0 below
-
-                if payment_obj.pending and datetime.datetime.now() > payment_obj.quote_start_time + datetime.timedelta(hours=quote_valid_hours):
-                    payment_obj.pending = False # set pending = False if quote time expired
 
                 value = accounts[to_address]
                 value_added = value - eval(f'payment_obj.amount_{coin_name}')
