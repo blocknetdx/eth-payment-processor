@@ -154,7 +154,7 @@ def get_sysblock_amount(amount):
     return float('{:.10f}'.format(amount / sysblock_price))
 
 
-def get_wsys_amount(amount):
+def get_sys_amount(amount):
     global wsys_price
     global last_amount_update_time_wsys
 

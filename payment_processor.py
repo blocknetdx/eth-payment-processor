@@ -10,7 +10,7 @@ from threading import Thread
 from flask import Flask, request, Response, g, jsonify
 from database.models import commit, db_session, select, Project, Payment
 from util.eth_payments import Web3Helper, coin_names
-from util import get_eth_amount, get_wsys_amount, get_avax_amount, get_ablock_amount, get_aablock_amount, get_sysblock_amount, \
+from util import get_eth_amount, get_sys_amount, get_avax_amount, get_ablock_amount, get_aablock_amount, get_sysblock_amount, \
                  min_payment_amount_tier1, min_payment_amount_tier2, min_payment_amount_xquery, discount_ablock, discount_aablock, \
                  discount_sysblock, min_api_calls, quote_valid_hours
 
@@ -211,13 +211,13 @@ def create_or_extend_project(project_id=None):
                     min_amount_ablock = min_amount['ablock'],
                     min_amount_avax = min_amount['avax'],
                     min_amount_aablock = min_amount['aablock'],
-                    min_amount_wsys = min_amount['wsys'],
+                    min_amount_sys = min_amount['sys'],
                     min_amount_sysblock = min_amount['sysblock'],
                     amount_eth=0,
                     amount_ablock=0,
                     amount_avax=0,
                     amount_aablock=0,
-                    amount_wsys=0,
+                    amount_sys=0,
                     amount_sysblock=0
                 )
                 commit()
@@ -273,7 +273,7 @@ def create_or_extend_project(project_id=None):
                 payment.min_amount_ablock = min_amount['ablock']
                 payment.min_amount_avax = min_amount['avax']
                 payment.min_amount_aablock = min_amount['aablock']
-                payment.min_amount_wsys = min_amount['wsys']
+                payment.min_amount_sys = min_amount['sys']
                 payment.min_amount_sysblock = min_amount['sysblock']
 
                 commit()
@@ -303,7 +303,7 @@ def create_or_extend_project(project_id=None):
                     'min_amount_ablock': payment.min_amount_ablock,
                     'min_amount_avax': payment.min_amount_avax,
                     'min_amount_aablock': payment.min_amount_aablock,
-                    'min_amount_wsys': payment.min_amount_wsys,
+                    'min_amount_sys': payment.min_amount_sys,
                     'min_amount_sysblock': payment.min_amount_sysblock,
                     'min_amount_usd': payment.min_amount_usd,
                     'min_amount_ablock_usd': payment.min_amount_ablock_usd,
