@@ -41,7 +41,7 @@ class Payment(db.Entity):
     min_amount_ablock = Optional(float)
     min_amount_avax = Optional(float)
     min_amount_aablock = Optional(float)
-    min_amount_wsys = Optional(float)
+    min_amount_sys = Optional(float)
     min_amount_sysblock = Optional(float)
 
     tx_hash = Optional(str)
@@ -49,7 +49,7 @@ class Payment(db.Entity):
     amount_ablock = Optional(float)
     amount_avax = Optional(float)
     amount_aablock = Optional(float)
-    amount_wsys = Optional(float)
+    amount_sys = Optional(float)
     amount_sysblock = Optional(float)
     quote_start_time = Required(datetime)
 

@@ -8,7 +8,7 @@ import secrets
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
 from database.models import Payment, db_session, commit
-from util import get_eth_amount, get_wsys_amount, \
+from util import get_eth_amount, get_sys_amount, \
                  get_ablock_amount, get_aablock_amount, get_sysblock_amount, \
                  min_payment_amount_tier1, min_payment_amount_tier2, min_payment_amount_xquery, \
                  discount_ablock, discount_aablock, discount_sysblock, quote_valid_hours, min_api_calls
@@ -27,7 +27,7 @@ coin_names = {
             False:'aablock'
             },
         'nevm': {
-            True:'wsys',
+            True:'sys',
             False:'sysblock'
             }
         }
@@ -125,8 +125,8 @@ class Web3Helper:
                 payment_obj.amount_avax = float(value)
             elif coin_name == 'aablock':
                 payment_obj.amount_aablock = float(value)
-            elif coin_name == 'wsys':
-                payment_obj.amount_wsys = float(value)
+            elif coin_name == 'sys':
+                payment_obj.amount_sys = float(value)
             elif coin_name == 'sysblock':
                 payment_obj.amount_sysblock = float(value)
             elif coin_name == 'eth':

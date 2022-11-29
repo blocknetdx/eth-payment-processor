@@ -130,3 +130,7 @@ if __name__ == '__main__':
 	add_column('payment','min_amount_ablock_usd', 'float8')
 	add_column('payment','min_amount_aablock_usd', 'float8')
 	add_column('payment','min_amount_sysblock_usd', 'float8')
+
+
+	rename_column('payment','amount_wsys', 'amount_sys')
+	rename_column('payment','min_amount_wsys','min_amount_sys')
